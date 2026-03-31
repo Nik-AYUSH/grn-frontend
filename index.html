@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GRN Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --navy:       #0f1f3d;
+            --navy-mid:   #162847;
+            --navy-light: #1e3a5f;
+            --blue:       #2563eb;
+            --blue-light: #3b82f6;
+            --gold:       #c9a84c;
+            --gold-light: #e2c07a;
+            --white:      #ffffff;
+            --off-white:  #f4f7fc;
+            --text-light: #94a3b8;
+            --text-mid:   #cbd5e1;
+            --border:     rgba(255,255,255,0.08);
+            --shadow:     0 25px 60px rgba(0,0,0,0.4);
+            --radius:     14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(37,99,235,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(135deg, var(--navy-mid), var(--navy-light));
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            animation: slideDown 0.6s ease both;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0);     opacity: 1; }
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--navy);
+            box-shadow: 0 4px 12px rgba(201,168,76,0.3);
+        }
+
+        .header-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 11px;
+            color: var(--text-light);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-download {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy);
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(201,168,76,0.25);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201,168,76,0.4);
+        }
+
+        /* ✅ Stock download button — blue toned */
+        .btn-stock {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: var(--white);
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+        }
+
+        .btn-stock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+            padding: 36px 40px;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { transform: translateY(24px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .calendar-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .fc { font-family: 'DM Sans', sans-serif !important; }
+        .fc .fc-toolbar-title { font-family: 'Playfair Display', serif !important; font-size: 20px !important; color: var(--white) !important; }
+        .fc .fc-button { background: var(--navy) !important; border: 1px solid rgba(255,255,255,0.12) !important; color: var(--white) !important; font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; border-radius: 7px !important; padding: 6px 14px !important; transition: all 0.2s ease !important; box-shadow: none !important; }
+        .fc .fc-button:hover { background: var(--blue) !important; border-color: var(--blue) !important; transform: translateY(-1px) !important; }
+        .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--blue) !important; border-color: var(--blue) !important; }
+        .fc .fc-col-header-cell { background: rgba(255,255,255,0.04) !important; border-color: var(--border) !important; }
+        .fc .fc-col-header-cell-cushion { color: var(--gold-light) !important; font-size: 12px !important; font-weight: 600 !important; letter-spacing: 1px !important; text-transform: uppercase !important; text-decoration: none !important; padding: 10px 0 !important; }
+        .fc .fc-daygrid-day { border-color: var(--border) !important; transition: background 0.2s ease !important; }
+        .fc .fc-daygrid-day:hover { background: rgba(37,99,235,0.08) !important; cursor: pointer; }
+        .fc .fc-daygrid-day-number { color: var(--text-mid) !important; font-size: 13px !important; font-weight: 500 !important; text-decoration: none !important; padding: 6px 8px !important; }
+        .fc .fc-day-today { background: rgba(37,99,235,0.12) !important; }
+        .fc .fc-day-today .fc-daygrid-day-number { color: var(--gold-light) !important; font-weight: 700 !important; }
+        .fc .fc-event { background: linear-gradient(135deg, var(--blue), var(--blue-light)) !important; border: none !important; border-radius: 5px !important; font-size: 11px !important; font-weight: 500 !important; padding: 2px 6px !important; box-shadow: 0 2px 8px rgba(37,99,235,0.3) !important; transition: all 0.2s ease !important; }
+        .fc .fc-event:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 14px rgba(37,99,235,0.5) !important; }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: var(--border) !important; }
+        .fc-scrollgrid { border-color: var(--border) !important; }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 12, 28, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 32px;
+            z-index: 10000;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+
+        .popup h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: var(--white);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .popup h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(to bottom, var(--gold), var(--blue));
+            border-radius: 2px;
+        }
+
+        .popup table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .popup table th { background: rgba(255,255,255,0.05); color: var(--gold-light); font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 12px 14px; border: 1px solid var(--border); white-space: nowrap; }
+        .popup table td { padding: 10px 10px; border: 1px solid var(--border); vertical-align: top; }
+
+        .popup input, .popup select {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 7px;
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            padding: 8px 10px;
+            width: 100%;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .popup input:focus, .popup select:focus {
+            border-color: var(--blue-light);
+            background: rgba(37,99,235,0.1);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        .popup input[readonly] { background: rgba(255,255,255,0.03); color: var(--gold-light); border-color: rgba(255,255,255,0.06); }
+        .popup select option { background: var(--navy-light); color: var(--white); }
+
+        .qtyBox {
+            display: none;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 12px;
+        }
+
+        .qtyBox div { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .qtyBox div:last-child { margin-bottom: 0; }
+        .qtyBox label { font-size: 11px; color: var(--text-light); letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; width: 65px; flex-shrink: 0; }
+        .qtyBox input { width: 100px !important; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+
+        .btn { padding: 10px 22px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.22s ease; letter-spacing: 0.2px; }
+        .btn-primary { background: linear-gradient(135deg, var(--blue), var(--blue-light)); color: var(--white); box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(37,99,235,0.45); }
+        .btn-secondary { background: rgba(255,255,255,0.07); color: var(--text-mid); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+        .btn-danger { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); transform: translateY(-2px); }
+
+        #itemPopup { width: 92%; max-width: 980px; max-height: 85vh; overflow-y: auto; }
+        #itemPopup::-webkit-scrollbar { width: 5px; }
+        #itemPopup::-webkit-scrollbar-track { background: transparent; }
+        #itemPopup::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+        /* ✅ Stock update toast notification */
+        #stockToast {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99999;
+            padding: 16px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            max-width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+            line-height: 1.5;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #064e3b, #065f46);
+            border: 1px solid rgba(52,211,153,0.3);
+            color: #6ee7b7;
+        }
+
+        .toast-warning {
+            background: linear-gradient(135deg, #78350f, #92400e);
+            border: 1px solid rgba(251,191,36,0.3);
+            color: #fde68a;
+        }
+
+        .toast-title { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-logo">G</div>
+        <div>
+            <div class="header-title">GRN Register</div>
+            <div class="header-subtitle">Goods Receipt Note Management</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <!-- ✅ Download Stock Register button -->
+        <button class="btn-stock" onclick="downloadStock()">
+            📦 Stock Register
+        </button>
+        <button class="btn-download" onclick="downloadExcel()">
+            ⬇ Download GRN
+        </button>
+    </div>
+</header>
+
+<main>
+    <div class="calendar-card">
+        <div id="calendar"></div>
+    </div>
+</main>
+
+<div id="overlay"></div>
+
+<!-- ✅ Stock update toast -->
+<div id="stockToast"></div>
+
+<!-- GRN Form Popup -->
+<div id="formPopup" class="popup" style="width:700px; max-width:95vw;">
+    <h3>GRN Entry</h3>
+    <table>
+        <tr>
+            <th>Sr.No</th><th>GRN Date</th><th>GRN No</th>
+            <th>Supplier Name</th><th>Invoice No</th><th>Invoice Date</th>
+        </tr>
+        <tr>
+            <td><input id="c1" placeholder="e.g. 1"></td>
+            <td><input id="c2"></td>
+            <td><input id="c3" placeholder="GRN-001"></td>
+            <td><input id="c4" placeholder="Supplier name"></td>
+            <td><input id="c5" placeholder="INV-001"></td>
+            <td><input id="c6"></td>
+        </tr>
+    </table>
+    <div class="btn-row">
+        <button class="btn btn-danger"    onclick="deleteData()">🗑 Delete</button>
+        <button class="btn btn-secondary" onclick="closePopup()">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveData()">Save GRN →</button>
+    </div>
+</div>
+
+<!-- Item Details Popup -->
+<div id="itemPopup" class="popup">
+    <h3>Item Details</h3>
+    <input type="hidden" id="currentItemId" value="">
+    <table id="itemTable">
+        <tr>
+            <th>PO Number</th><th>Item Description</th><th>Quantity Received</th>
+            <th>Status</th><th>Location</th><th>Remark</th>
+        </tr>
+        <tr>
+            <td><input id="po" placeholder="PO-001"></td>
+            <td><input id="desc" placeholder="Must match stock register exactly"></td>
+            <td>
+                <select id="qtySelect" onchange="toggleQuantityFields(this)">
+                    <option value="">Select</option>
+                    <option value="show">Enter Details</option>
+                </select>
+                <div class="qtyBox">
+                    <div><label>UOM</label>
+                        <select class="uom" style="width:100px;">
+                            <option value="">-- Select --</option>
+                            <option>Pcs</option><option>Kg</option><option>Litre</option>
+                            <option>Metre</option><option>Box</option><option>Bag</option>
+                            <option>Set</option><option>Dozen</option><option>Roll</option>
+                            <option>Coils</option><option>Nos.</option><option>Other</option>
+                        </select>
+                    </div>
+                    <div><label>Unit</label><input class="unit" type="number" min="0" placeholder="0" oninput="calculate()"></div>
+                    <div><label>Rate</label><input class="rate" type="number" min="0" placeholder="0.00" oninput="calculate()"></div>
+                    <div><label>Amount</label><input class="amount" type="number" readonly placeholder="Auto"></div>
+                    <div><label>Tax (%)</label><input class="tax" type="number" min="0" placeholder="0" oninput="calculate()"></div>
+                    <div><label>Total</label><input class="total" type="number" readonly placeholder="Auto"></div>
+                </div>
+            </td>
+            <td><select id="status"><option>OK</option><option>Rejected</option></select></td>
+            <td><input id="location" placeholder="e.g. Rack A"></td>
+            <td><input id="remark" placeholder="Optional"></td>
+        </tr>
+    </table>
+    <div class="btn-row">
+        <button class="btn btn-danger"    onclick="deleteItem()">🗑 Delete Item</button>
+        <button class="btn btn-secondary" onclick="closeItemPopup()">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveItem()">Save Item →</button>
+    </div>
+</div>
+
+<script>
+const API = "https://grn-backend-production.up.railway.app";
+
+let selectedDate = null;
+let selectedEvent = null;
+let currentGRNId = null;
+let calendar = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        events: function (fetchInfo, successCallback, failureCallback) {
+            fetch(`${API}/entries`)
+                .then(res => { if (!res.ok) throw new Error("Failed"); return res.json(); })
+                .then(data => {
+                    successCallback(data.map(e => ({
+                        id: String(e.id),
+                        title: [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
+                        date: e.date
+                    })));
+                })
+                .catch(err => { console.error("Fetch error:", err); failureCallback(err); });
+        },
+        dateClick: function (info) {
+            selectedDate = info.dateStr;
+            selectedEvent = null;
+            clearGRNForm();
+            document.getElementById("c2").value = selectedDate;
+            showOverlay();
+            document.getElementById("formPopup").style.display = "block";
+        },
+        eventClick: function (info) {
+            selectedEvent = info.event;
+            selectedDate = info.event.startStr;
+            let values = (info.event.title || "").split(" | ");
+            for (let i = 1; i <= 6; i++) document.getElementById("c" + i).value = values[i-1] || "";
+            showOverlay();
+            document.getElementById("formPopup").style.display = "block";
+        }
+    });
+    calendar.render();
+});
+
+function showOverlay() { document.getElementById("overlay").style.display = "block"; }
+
+function calculate() {
+    const unit   = parseFloat(document.querySelector(".unit")?.value)  || 0;
+    const rate   = parseFloat(document.querySelector(".rate")?.value)  || 0;
+    const tax    = parseFloat(document.querySelector(".tax")?.value)   || 0;
+    const amount = unit * rate;
+    const total  = amount + (amount * tax / 100);
+    const af = document.querySelector(".amount");
+    const tf = document.querySelector(".total");
+    if (af) af.value = amount.toFixed(2);
+    if (tf) tf.value = total.toFixed(2);
+}
+
+function downloadExcel() {
+    const date = calendar.getDate();
+    const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+    window.location.href = `${API}/download?month=${month}`;
+}
+
+// ✅ Download updated stock register
+function downloadStock() {
+    window.location.href = `${API}/downloadStock`;
+}
+
+// ✅ Show toast notification for stock update result
+function showStockToast(stockResult) {
+    const toast = document.getElementById("stockToast");
+
+    if (stockResult.updated) {
+        toast.className = "toast-success";
+        toast.innerHTML = `
+            <div class="toast-title">✅ Stock Register Updated</div>
+            <div>Item: <strong>${stockResult.matchedItem}</strong></div>
+            <div>Sheet: ${stockResult.sheetName}</div>
+            <div>${stockResult.previousQty} → ${stockResult.newQty} (+${stockResult.addedQty})</div>
+        `;
+    } else {
+        toast.className = "toast-warning";
+        toast.innerHTML = `
+            <div class="toast-title">⚠️ Stock Not Updated</div>
+            <div>${stockResult.reason}</div>
+        `;
+    }
+
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 5000);
+}
+
+function clearGRNForm() {
+    for (let i = 1; i <= 6; i++) document.getElementById("c" + i).value = "";
+}
+
+function openItemPopupNew() {
+    clearItemForm();
+    document.getElementById("itemPopup").style.display = "block";
+    showOverlay();
+}
+
+function openItemPopupEdit(grnId) {
+    fetch(`${API}/entries`)
+        .then(res => res.json())
+        .then(data => {
+            const entry = data.find(e => e.id === grnId);
+            if (entry && entry.items && entry.items.length > 0) {
+                populateItemForm(entry.items[entry.items.length - 1]);
+            } else {
+                clearItemForm();
+            }
+            document.getElementById("itemPopup").style.display = "block";
+            showOverlay();
+        })
+        .catch(() => {
+            clearItemForm();
+            document.getElementById("itemPopup").style.display = "block";
+            showOverlay();
+        });
+}
+
+function populateItemForm(item) {
+    document.getElementById("po").value            = item.po       || "";
+    document.getElementById("desc").value          = item.desc     || "";
+    document.getElementById("location").value      = item.location || "";
+    document.getElementById("remark").value        = item.remark   || "";
+    document.getElementById("currentItemId").value = item.itemId   || "";
+    const statusEl = document.getElementById("status");
+    if (item.status) statusEl.value = item.status;
+    if (item.unit || item.rate || item.uom) {
+        document.getElementById("qtySelect").value = "show";
+        document.querySelector(".qtyBox").style.display = "block";
+        const uomEl = document.querySelector(".uom");
+        if (uomEl && item.uom) uomEl.value = item.uom;
+        document.querySelector(".unit").value   = item.unit   || "";
+        document.querySelector(".rate").value   = item.rate   || "";
+        document.querySelector(".tax").value    = item.tax    || "";
+        document.querySelector(".amount").value = item.amount || "";
+        document.querySelector(".total").value  = item.total  || "";
+    } else {
+        document.getElementById("qtySelect").value = "";
+        document.querySelector(".qtyBox").style.display = "none";
+    }
+}
+
+function saveData() {
+    let payload = {
+        date: selectedDate,
+        col1: document.getElementById("c1").value,
+        col2: document.getElementById("c2").value,
+        col3: document.getElementById("c3").value,
+        col4: document.getElementById("c4").value,
+        col5: document.getElementById("c5").value,
+        col6: document.getElementById("c6").value
+    };
+
+    if (!selectedEvent) {
+        fetch(`${API}/addEntry`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => { if (!res.ok) throw new Error("Add failed: " + res.status); return res.json(); })
+        .then(data => {
+            currentGRNId = data.id;
+            closePopup();
+            calendar.refetchEvents();
+            alert("GRN Saved!");
+            openItemPopupNew();
+        })
+        .catch(err => { console.error("Add Error:", err); alert("Failed to save GRN."); });
+    } else {
+        fetch(`${API}/updateEntry`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: Number(selectedEvent.id), updated: payload })
+        })
+        .then(res => { if (!res.ok) throw new Error("Update failed: " + res.status); return res.json(); })
+        .then(() => {
+            currentGRNId = Number(selectedEvent.id);
+            closePopup();
+            calendar.refetchEvents();
+            alert("GRN Updated!");
+            if (confirm("Do you want to update item details?")) openItemPopupEdit(currentGRNId);
+        })
+        .catch(err => { console.error("Update Error:", err); alert("Update failed."); });
+    }
+}
+
+function deleteData() {
+    if (!selectedEvent) { alert("Please click on an existing entry first."); return; }
+    if (!confirm("⚠️ This will permanently delete the GRN entry and all its items.\n\nContinue?")) return;
+    fetch(`${API}/deleteEntry/${selectedEvent.id}`, { method: "DELETE" })
+    .then(res => { if (!res.ok) throw new Error("Delete failed: " + res.status); return res.json(); })
+    .then(() => { closePopup(); calendar.refetchEvents(); alert("GRN Deleted!"); })
+    .catch(err => { console.error("Delete Error:", err); alert("Delete failed."); });
+}
+
+function saveItem() {
+    if (!currentGRNId) { alert("No GRN selected. Please save a GRN first."); return; }
+    const itemId = document.getElementById("currentItemId").value;
+    let itemData = {
+        po:       document.getElementById("po").value,
+        desc:     document.getElementById("desc").value,
+        uom:      document.querySelector(".uom")?.value    || "",
+        unit:     document.querySelector(".unit")?.value   || "",
+        rate:     document.querySelector(".rate")?.value   || "",
+        amount:   document.querySelector(".amount")?.value || "",
+        tax:      document.querySelector(".tax")?.value    || "",
+        total:    document.querySelector(".total")?.value  || "",
+        status:   document.getElementById("status").value,
+        location: document.getElementById("location").value,
+        remark:   document.getElementById("remark").value
+    };
+
+    if (itemId) {
+        fetch(`${API}/updateItem/${itemId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(itemData)
+        })
+        .then(res => { if (!res.ok) throw new Error("Item update failed: " + res.status); return res.json(); })
+        .then(data => {
+            alert("Item Updated!");
+            if (data.stockUpdate) showStockToast(data.stockUpdate); // ✅ Show toast
+        })
+        .catch(err => { console.error("Item Update Error:", err); alert("Item update failed."); });
+    } else {
+        fetch(`${API}/addItem/${currentGRNId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(itemData)
+        })
+        .then(res => { if (!res.ok) throw new Error("Item save failed: " + res.status); return res.json(); })
+        .then(data => {
+            if (data && data.id) document.getElementById("currentItemId").value = data.id;
+            alert("Item Saved!");
+            if (data.stockUpdate) showStockToast(data.stockUpdate); // ✅ Show toast
+        })
+        .catch(err => { console.error("Item Save Error:", err); alert("Item save failed."); });
+    }
+}
+
+function deleteItem() {
+    const itemId = document.getElementById("currentItemId").value;
+    if (!itemId) { alert("No item to delete. Save an item first."); return; }
+    if (!confirm("⚠️ This will permanently delete the item.\n\nContinue?")) return;
+    fetch(`${API}/deleteItem/${itemId}`, { method: "DELETE" })
+    .then(res => { if (!res.ok) throw new Error("Item delete failed: " + res.status); return res.json(); })
+    .then(() => { alert("Item Deleted!"); clearItemForm(); closeItemPopup(); })
+    .catch(err => { console.error("Item Delete Error:", err); alert("Item delete failed."); });
+}
+
+function toggleQuantityFields(select) {
+    document.querySelector(".qtyBox").style.display = select.value === "show" ? "block" : "none";
+}
+
+function clearItemForm() {
+    ["po", "desc", "location", "remark", "currentItemId"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("qtySelect").value = "";
+    document.querySelector(".qtyBox").style.display = "none";
+    [".unit", ".rate", ".amount", ".tax", ".total"].forEach(cls => { const el = document.querySelector(cls); if (el) el.value = ""; });
+    const uom = document.querySelector(".uom");
+    if (uom) uom.selectedIndex = 0;
+    document.getElementById("status").selectedIndex = 0;
+}
+
+function closePopup() {
+    document.getElementById("formPopup").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
+}
+
+function closeItemPopup() {
+    document.getElementById("itemPopup").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
+}
+</script>
+</body>
+</html>
