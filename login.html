@@ -7,18 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --navy:       #0f1f3d;
-            --navy-mid:   #162847;
-            --navy-light: #1e3a5f;
-            --blue:       #2563eb;
-            --blue-light: #3b82f6;
-            --gold:       #c9a84c;
-            --gold-light: #e2c07a;
-            --white:      #ffffff;
-            --text-light: #94a3b8;
-            --text-mid:   #cbd5e1;
-            --border:     rgba(255,255,255,0.08);
-        }
+    --navy:       #0a1f0f;  /* dark green-black instead of navy */
+    --navy-mid:   #0f2d15;  /* dark green mid */
+    --navy-light: #174d20;  /* dark green light */
+    --blue:       #4CAF50;  /* ✅ YMK green */
+    --blue-light: #66BB6A;  /* ✅ lighter green */
+    --gold:       #c9a84c;  /* keep gold accent */
+    --gold-light: #e2c07a;  /* keep gold light */
+    --white:      #ffffff;
+    --off-white:  #f4f7fc;
+    --text-light: #94a3b8;
+    --text-mid:   #cbd5e1;
+    --border:     rgba(255,255,255,0.08);
+    --shadow:     0 25px 60px rgba(0,0,0,0.4);
+    --radius:     14px;
+}
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,16 +37,17 @@
         }
 
         body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse at 20% 20%, rgba(37,99,235,0.2) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.1) 0%, transparent 50%);
+             content: '';
+             position: fixed;
+             inset: 0;
+             background:
+                 radial-gradient(ellipse at 20% 20%, rgba(76,175,80,0.15) 0%, transparent 50%),
+                 radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
+        /* Animated background dots */
         body::after {
             content: '';
             position: fixed;
@@ -79,7 +83,7 @@
 
         .brand {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 36px;
         }
 
         .brand-logo {
@@ -117,42 +121,12 @@
         .divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            margin-bottom: 24px;
+            margin-bottom: 32px;
         }
 
-        .tabs {
-            display: flex;
-            background: rgba(255,255,255,0.04);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 28px;
-            border: 1px solid var(--border);
+        .form-group {
+            margin-bottom: 20px;
         }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 7px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: none;
-            color: var(--text-light);
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--blue), var(--blue-light));
-            color: var(--white);
-            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
-        }
-
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        .form-group { margin-bottom: 18px; }
 
         .form-label {
             display: block;
@@ -164,7 +138,9 @@
             margin-bottom: 8px;
         }
 
-        .input-wrapper { position: relative; }
+        .input-wrapper {
+            position: relative;
+        }
 
         .input-icon {
             position: absolute;
@@ -213,7 +189,7 @@
 
         .password-toggle:hover { color: var(--white); }
 
-        .btn-submit {
+        .btn-login {
             width: 100%;
             background: linear-gradient(135deg, var(--blue), var(--blue-light));
             color: var(--white);
@@ -228,41 +204,44 @@
             box-shadow: 0 4px 20px rgba(37,99,235,0.35);
             margin-top: 8px;
             letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-submit:hover {
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 28px rgba(37,99,235,0.5);
         }
 
-        .btn-submit:disabled {
+        .btn-login:hover::before { opacity: 1; }
+        .btn-login:active { transform: translateY(0); }
+
+        .btn-login:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
-        .alert-msg {
+        .error-msg {
             display: none;
-            border-radius: 8px;
-            font-size: 13px;
-            padding: 12px 14px;
-            margin-bottom: 18px;
-        }
-
-        .alert-error {
             background: rgba(239,68,68,0.12);
             border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
             color: #f87171;
+            font-size: 13px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
             animation: shake 0.4s ease;
         }
-
-        .alert-success {
-            background: rgba(16,185,129,0.12);
-            border: 1px solid rgba(16,185,129,0.25);
-            color: #6ee7b7;
-        }
-
-        .alert-msg.show { display: block; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -270,17 +249,29 @@
             75% { transform: translateX(6px); }
         }
 
-        .signup-note {
-            font-size: 12px;
-            color: var(--text-light);
-            text-align: center;
-            margin-top: 16px;
-            line-height: 1.6;
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            border: 1px solid var(--border);
+        .error-msg.show { display: block; }
+
+        .role-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 28px;
         }
+
+        .role-badge {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .role-admin    { background: rgba(201,168,76,0.15); color: var(--gold-light); border: 1px solid rgba(201,168,76,0.2); }
+        .role-manager  { background: rgba(37,99,235,0.15);  color: #93c5fd;           border: 1px solid rgba(37,99,235,0.2); }
+        .role-worker   { background: rgba(16,185,129,0.15); color: #6ee7b7;           border: 1px solid rgba(16,185,129,0.2); }
+        .role-viewer   { background: rgba(148,163,184,0.15); color: #cbd5e1;          border: 1px solid rgba(148,163,184,0.2); }
 
         .loader {
             display: inline-block;
@@ -318,69 +309,36 @@
 
         <div class="divider"></div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
-            <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+        <div id="errorMsg" class="error-msg">
+            ⚠ Invalid username or password. Please try again.
         </div>
 
-        <!-- Login Panel -->
-        <div class="tab-panel active" id="panel-login">
-            <div id="loginError" class="alert-msg alert-error"></div>
-
-            <div class="form-group">
-                <label class="form-label">Username</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">👤</span>
-                    <input type="text" id="loginUsername" class="form-input" placeholder="Enter your username" autocomplete="username">
-                </div>
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <div class="input-wrapper">
+                <span class="input-icon">👤</span>
+                <input type="text" id="username" class="form-input" placeholder="Enter your username" autocomplete="username">
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">🔒</span>
-                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" autocomplete="current-password">
-                    <button class="password-toggle" onclick="togglePassword('loginPassword','toggleLogin')" type="button" id="toggleLogin">👁</button>
-                </div>
-            </div>
-
-            <button class="btn-submit" onclick="login()" id="loginBtn">Sign In</button>
         </div>
 
-        <!-- Signup Panel -->
-        <div class="tab-panel" id="panel-signup">
-            <div id="signupMsg" class="alert-msg"></div>
-
-            <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">👤</span>
-                    <input type="text" id="signupUsername" class="form-input" placeholder="Enter your full name">
-                </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password">
+                <button class="password-toggle" onclick="togglePassword()" type="button" id="toggleBtn">👁</button>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">🔒</span>
-                    <input type="password" id="signupPassword" class="form-input" placeholder="Min 8 chars, 1 uppercase, 1 special">
-                    <button class="password-toggle" onclick="togglePassword('signupPassword','toggleSignup')" type="button" id="toggleSignup">👁</button>
-                </div>
-            </div>
+        <button class="btn-login" onclick="login()" id="loginBtn">
+            Sign In
+        </button>
 
-            <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">🔒</span>
-                    <input type="password" id="signupConfirm" class="form-input" placeholder="Re-enter your password">
-                </div>
-            </div>
-
-            <button class="btn-submit" onclick="signup()" id="signupBtn">Create Account</button>
-
-            <div class="signup-note">
-                ℹ️ New accounts start with <strong>Viewer</strong> access. Contact your admin to update your role.
-            </div>
+        <div class="role-badges">
+            <span class="role-badge role-admin">Admin</span>
+            <span class="role-badge role-manager">Store Manager</span>
+            <span class="role-badge role-worker">Warehouse Worker</span>
+            <span class="role-badge role-viewer">Viewer</span>
         </div>
 
     </div>
@@ -390,45 +348,44 @@
 <script>
 const API = "https://grn-backend-production.up.railway.app";
 
-// ✅ Redirect if already logged in
 const existingToken = sessionStorage.getItem("token");
-if (existingToken) redirectByRole(sessionStorage.getItem("role"));
+if (existingToken) {
+    redirectByRole(sessionStorage.getItem("role"));
+}
 
 function redirectByRole(role) {
     if (role === "admin" || role === "store_manager") {
         window.location.href = "index.html";
     } else if (role === "warehouse_worker") {
         window.location.href = "warehouse.html";
+    } else if (role === "viewer") {
+        window.location.href = "stock.html";
     } else {
         window.location.href = "index.html";
     }
 }
 
-function switchTab(tab) {
-    document.querySelectorAll(".tab-btn").forEach((btn, i) => {
-        btn.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "signup"));
-    });
-    document.getElementById("panel-login").classList.toggle("active", tab === "login");
-    document.getElementById("panel-signup").classList.toggle("active", tab === "signup");
+function togglePassword() {
+    const input = document.getElementById("password");
+    const btn = document.getElementById("toggleBtn");
+    if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "🙈";
+    } else {
+        input.type = "password";
+        btn.textContent = "👁";
+    }
 }
 
-function togglePassword(inputId, btnId) {
-    const input = document.getElementById(inputId);
-    const btn   = document.getElementById(btnId);
-    input.type  = input.type === "password" ? "text" : "password";
-    btn.textContent = input.type === "password" ? "👁" : "🙈";
-}
-
+// ✅ Allow Enter key to submit
 document.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    if (document.getElementById("panel-login").classList.contains("active")) login();
-    else signup();
+    if (e.key === "Enter") login();
 });
 
 async function login() {
-    const username = document.getElementById("loginUsername").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const errorMsg = document.getElementById("loginError");
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
     const loginBtn = document.getElementById("loginBtn");
 
     errorMsg.classList.remove("show");
@@ -439,15 +396,17 @@ async function login() {
         return;
     }
 
+    // Show loading
     loginBtn.disabled = true;
     loginBtn.innerHTML = '<span class="loader"></span>Signing in...';
 
     try {
-        const res  = await fetch(`${API}/login`, {
+        const res = await fetch(`${API}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
         });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -458,10 +417,13 @@ async function login() {
             return;
         }
 
-        sessionStorage.setItem("token",    data.token);
+        // ✅ Save token and user info
+        sessionStorage.setItem("token", data.token);
         sessionStorage.setItem("username", data.user.username);
-        sessionStorage.setItem("role",     data.user.role);
-        sessionStorage.setItem("userId",   data.user.id);
+        sessionStorage.setItem("role", data.user.role);
+        sessionStorage.setItem("userId", data.user.id);
+
+        // ✅ Redirect based on role
         redirectByRole(data.user.role);
 
     } catch (err) {
@@ -469,65 +431,6 @@ async function login() {
         errorMsg.classList.add("show");
         loginBtn.disabled = false;
         loginBtn.innerHTML = "Sign In";
-    }
-}
-
-async function signup() {
-    const username  = document.getElementById("signupUsername").value.trim();
-    const password  = document.getElementById("signupPassword").value;
-    const confirm   = document.getElementById("signupConfirm").value;
-    const msgEl     = document.getElementById("signupMsg");
-    const signupBtn = document.getElementById("signupBtn");
-
-    msgEl.className = "alert-msg";
-    msgEl.classList.remove("show");
-
-    if (!username || !password || !confirm) {
-        msgEl.textContent = "⚠ Please fill in all fields.";
-        msgEl.classList.add("alert-error", "show");
-        return;
-    }
-
-    if (password !== confirm) {
-        msgEl.textContent = "⚠ Passwords do not match.";
-        msgEl.classList.add("alert-error", "show");
-        return;
-    }
-
-    signupBtn.disabled = true;
-    signupBtn.innerHTML = '<span class="loader"></span>Creating account...';
-
-    try {
-        const res  = await fetch(`${API}/signup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password, role: "viewer" })
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-            msgEl.textContent = "⚠ " + (data.error || "Signup failed.");
-            msgEl.classList.add("alert-error", "show");
-            signupBtn.disabled = false;
-            signupBtn.innerHTML = "Create Account";
-            return;
-        }
-
-        msgEl.textContent = "✅ Account created! You can now sign in. Contact your admin to update your role.";
-        msgEl.classList.add("alert-success", "show");
-        signupBtn.disabled = false;
-        signupBtn.innerHTML = "Create Account";
-
-        document.getElementById("signupUsername").value = "";
-        document.getElementById("signupPassword").value = "";
-        document.getElementById("signupConfirm").value  = "";
-        setTimeout(() => switchTab("login"), 2500);
-
-    } catch (err) {
-        msgEl.textContent = "⚠ Could not connect to server. Please try again.";
-        msgEl.classList.add("alert-error", "show");
-        signupBtn.disabled = false;
-        signupBtn.innerHTML = "Create Account";
     }
 }
 </script>
