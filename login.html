@@ -348,7 +348,6 @@
 <script>
 const API = "https://grn-backend-production.up.railway.app";
 
-// ✅ Redirect if already logged in
 const existingToken = sessionStorage.getItem("token");
 if (existingToken) {
     redirectByRole(sessionStorage.getItem("role"));
