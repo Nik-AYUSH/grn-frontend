@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YMKS — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:       #0f1f3d;
+            --navy-mid:   #162847;
+            --navy-light: #1e3a5f;
+            --blue:       #2563eb;
+            --blue-light: #3b82f6;
+            --gold:       #c9a84c;
+            --gold-light: #e2c07a;
+            --white:      #ffffff;
+            --text-light: #94a3b8;
+            --text-mid:   #cbd5e1;
+            --border:     rgba(255,255,255,0.08);
+            --shadow:     0 25px 60px rgba(0,0,0,0.4);
+            --radius:     14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(37,99,235,0.2) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(30,58,95,0.5) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Animated background dots */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .login-card {
+            background: linear-gradient(145deg, rgba(22,40,71,0.95), rgba(30,58,95,0.9));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 48px 40px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--navy);
+            box-shadow: 0 8px 24px rgba(201,168,76,0.35);
+            margin: 0 auto 16px;
+        }
+
+        .brand-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: var(--text-light);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            padding: 13px 14px 13px 42px;
+            transition: all 0.25s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--blue-light);
+            background: rgba(37,99,235,0.08);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        .form-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover { color: var(--white); }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: var(--white);
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(37,99,235,0.5);
+        }
+
+        .btn-login:hover::before { opacity: 1; }
+        .btn-login:active { transform: translateY(0); }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-msg {
+            display: none;
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
+            color: #f87171;
+            font-size: 13px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .error-msg.show { display: block; }
+
+        .role-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 28px;
+        }
+
+        .role-badge {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .role-admin    { background: rgba(201,168,76,0.15); color: var(--gold-light); border: 1px solid rgba(201,168,76,0.2); }
+        .role-manager  { background: rgba(37,99,235,0.15);  color: #93c5fd;           border: 1px solid rgba(37,99,235,0.2); }
+        .role-worker   { background: rgba(16,185,129,0.15); color: #6ee7b7;           border: 1px solid rgba(16,185,129,0.2); }
+        .role-viewer   { background: rgba(148,163,184,0.15); color: #cbd5e1;          border: 1px solid rgba(148,163,184,0.2); }
+
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .footer-text {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 24px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <div class="brand">
+            <div class="brand-logo">G</div>
+            <div class="brand-title">YMKS Raylog</div>
+            <div class="brand-subtitle">Inventory Management System</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="errorMsg" class="error-msg">
+            ⚠ Invalid username or password. Please try again.
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <div class="input-wrapper">
+                <span class="input-icon">👤</span>
+                <input type="text" id="username" class="form-input" placeholder="Enter your username" autocomplete="username">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password">
+                <button class="password-toggle" onclick="togglePassword()" type="button" id="toggleBtn">👁</button>
+            </div>
+        </div>
+
+        <button class="btn-login" onclick="login()" id="loginBtn">
+            Sign In
+        </button>
+
+        <div class="role-badges">
+            <span class="role-badge role-admin">Admin</span>
+            <span class="role-badge role-manager">Store Manager</span>
+            <span class="role-badge role-worker">Warehouse Worker</span>
+            <span class="role-badge role-viewer">Viewer</span>
+        </div>
+
+    </div>
+    <div class="footer-text">© 2026 YMKS Raylog · Inventory Management</div>
+</div>
+
+<script>
+const API = "https://grn-backend-production.up.railway.app";
+
+// ✅ Redirect if already logged in
+const existingToken = localStorage.getItem("token");
+if (existingToken) {
+    redirectByRole(localStorage.getItem("role"));
+}
+
+function redirectByRole(role) {
+    if (role === "admin" || role === "store_manager") {
+        window.location.href = "index.html";
+    } else if (role === "warehouse_worker") {
+        window.location.href = "warehouse.html";
+    } else if (role === "viewer") {
+        window.location.href = "stock.html";
+    } else {
+        window.location.href = "index.html";
+    }
+}
+
+function togglePassword() {
+    const input = document.getElementById("password");
+    const btn = document.getElementById("toggleBtn");
+    if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "🙈";
+    } else {
+        input.type = "password";
+        btn.textContent = "👁";
+    }
+}
+
+// ✅ Allow Enter key to submit
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") login();
+});
+
+async function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
+    const loginBtn = document.getElementById("loginBtn");
+
+    errorMsg.classList.remove("show");
+
+    if (!username || !password) {
+        errorMsg.textContent = "⚠ Please enter both username and password.";
+        errorMsg.classList.add("show");
+        return;
+    }
+
+    // Show loading
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<span class="loader"></span>Signing in...';
+
+    try {
+        const res = await fetch(`${API}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            errorMsg.textContent = "⚠ " + (data.error || "Invalid username or password.");
+            errorMsg.classList.add("show");
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = "Sign In";
+            return;
+        }
+
+        // ✅ Save token and user info
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("userId", data.user.id);
+
+        // ✅ Redirect based on role
+        redirectByRole(data.user.role);
+
+    } catch (err) {
+        errorMsg.textContent = "⚠ Could not connect to server. Please try again.";
+        errorMsg.classList.add("show");
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = "Sign In";
+    }
+}
+</script>
+</body>
+</html>
