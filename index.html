@@ -129,7 +129,6 @@
             box-shadow: 0 8px 24px rgba(201,168,76,0.4);
         }
 
-        /* ✅ Stock download button — blue toned */
         .btn-stock {
             display: flex;
             align-items: center;
@@ -150,6 +149,101 @@
         .btn-stock:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+        }
+
+        /* Settings dropdown */
+        .settings-wrapper {
+            position: relative;
+        }
+
+        .btn-settings {
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-mid);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-settings:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--white);
+        }
+
+        .settings-dropdown {
+            display: none;
+            position: absolute;
+            top: 46px;
+            right: 0;
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 8px;
+            min-width: 200px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            z-index: 9999;
+            animation: dropDown 0.2s ease;
+        }
+
+        @keyframes dropDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-dropdown.open { display: block; }
+
+        .dropdown-user {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+
+        .dropdown-username {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .dropdown-role {
+            font-size: 11px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            color: var(--text-mid);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255,255,255,0.07);
+            color: var(--white);
+        }
+
+        .dropdown-item.danger { color: #f87171; }
+        .dropdown-item.danger:hover {
+            background: rgba(239,68,68,0.1);
+            color: #f87171;
         }
 
         main {
@@ -297,7 +391,6 @@
         #itemPopup::-webkit-scrollbar-track { background: transparent; }
         #itemPopup::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-        /* ✅ Stock update toast notification */
         #stockToast {
             display: none;
             position: fixed;
@@ -345,13 +438,30 @@
         </div>
     </div>
     <div class="header-right">
-        <!-- ✅ Download Stock Register button -->
         <button class="btn-stock" onclick="downloadStock()">
             📦 Stock Register
         </button>
         <button class="btn-download" onclick="downloadExcel()">
             ⬇ Download GRN
         </button>
+        <div class="settings-wrapper">
+            <button class="btn-settings" onclick="toggleSettings()" id="settingsBtn">⚙️</button>
+            <div class="settings-dropdown" id="settingsDropdown">
+                <div class="dropdown-user">
+                    <div class="dropdown-username" id="dropdownUsername">Loading...</div>
+                    <div class="dropdown-role" id="dropdownRole"></div>
+                </div>
+                <button class="dropdown-item" onclick="window.location.href='stock.html'">
+                    📊 Stock Register
+                </button>
+                <button class="dropdown-item" onclick="window.location.href='admin.html'" id="adminLink" style="display:none">
+                    👥 Manage Users
+                </button>
+                <button class="dropdown-item danger" onclick="logout()">
+                    🚪 Logout
+                </button>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -362,8 +472,6 @@
 </main>
 
 <div id="overlay"></div>
-
-<!-- ✅ Stock update toast -->
 <div id="stockToast"></div>
 
 <!-- GRN Form Popup -->
@@ -439,12 +547,27 @@
 <script>
 const API = "https://grn-backend-production.up.railway.app";
 
+// ✅ Immediate auth check before anything loads
+const _token = sessionStorage.getItem("token");
+if (!_token) {
+    window.location.href = "login.html";
+}
+
 let selectedDate = null;
 let selectedEvent = null;
 let currentGRNId = null;
 let calendar = null;
 
 document.addEventListener('DOMContentLoaded', function () {
+    // ✅ Set user info in dropdown after DOM is ready
+    const username = sessionStorage.getItem("username");
+    const role = sessionStorage.getItem("role");
+    document.getElementById("dropdownUsername").textContent = username || "User";
+    document.getElementById("dropdownRole").textContent = role ? role.replace(/_/g, " ") : "";
+    if (role === "admin") {
+        document.getElementById("adminLink").style.display = "flex";
+    }
+
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'dayGridMonth',
         events: function (fetchInfo, successCallback, failureCallback) {
@@ -479,6 +602,30 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 });
 
+function toggleSettings() {
+    document.getElementById("settingsDropdown").classList.toggle("open");
+}
+
+document.addEventListener("click", (e) => {
+    const wrapper = document.querySelector(".settings-wrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+        const dd = document.getElementById("settingsDropdown");
+        if (dd) dd.classList.remove("open");
+    }
+});
+
+async function logout() {
+    const token = sessionStorage.getItem("token");
+    try {
+        await fetch(`${API}/logout`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+    } catch(e) {}
+    sessionStorage.clear();
+    window.location.href = "login.html";
+}
+
 function showOverlay() { document.getElementById("overlay").style.display = "block"; }
 
 function calculate() {
@@ -499,15 +646,12 @@ function downloadExcel() {
     window.location.href = `${API}/download?month=${month}`;
 }
 
-// ✅ Download updated stock register
 function downloadStock() {
     window.location.href = `${API}/downloadStock`;
 }
 
-// ✅ Show toast notification for stock update result
 function showStockToast(stockResult) {
     const toast = document.getElementById("stockToast");
-
     if (stockResult.updated) {
         toast.className = "toast-success";
         toast.innerHTML = `
@@ -523,7 +667,6 @@ function showStockToast(stockResult) {
             <div>${stockResult.reason}</div>
         `;
     }
-
     toast.style.display = "block";
     setTimeout(() => { toast.style.display = "none"; }, 5000);
 }
@@ -661,7 +804,7 @@ function saveItem() {
         .then(res => { if (!res.ok) throw new Error("Item update failed: " + res.status); return res.json(); })
         .then(data => {
             alert("Item Updated!");
-            if (data.stockUpdate) showStockToast(data.stockUpdate); // ✅ Show toast
+            if (data.stockUpdate) showStockToast(data.stockUpdate);
         })
         .catch(err => { console.error("Item Update Error:", err); alert("Item update failed."); });
     } else {
@@ -674,7 +817,7 @@ function saveItem() {
         .then(data => {
             if (data && data.id) document.getElementById("currentItemId").value = data.id;
             alert("Item Saved!");
-            if (data.stockUpdate) showStockToast(data.stockUpdate); // ✅ Show toast
+            if (data.stockUpdate) showStockToast(data.stockUpdate);
         })
         .catch(err => { console.error("Item Save Error:", err); alert("Item save failed."); });
     }
