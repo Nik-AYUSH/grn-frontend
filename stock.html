@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:       #0a1f0f;
+            --navy-mid:   #0f2d15;
+            --navy-light: #174d20;
+            --blue:       #4CAF50;
+            --blue-light: #66BB6A;
+            --gold:       #c9a84c;
+            --gold-light: #e2c07a;
+            --white:      #ffffff;
+            --off-white:  #f4f7fc;
+            --text-light: #94a3b8;
+            --text-mid:   #cbd5e1;
+            --border:     rgba(255,255,255,0.08);
+            --shadow:     0 25px 60px rgba(0,0,0,0.4);
+            --radius:     14px;
+            --red:        #ef4444;
+            --red-light:  #f87171;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(76,175,80,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(135deg, var(--navy-mid), var(--navy-light));
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            animation: slideDown 0.6s ease both;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0);     opacity: 1; }
+        }
+
+        .header-left { display: flex; align-items: center; gap: 14px; }
+
+        .header-logo {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: var(--navy);
+            box-shadow: 0 4px 12px rgba(201,168,76,0.3);
+        }
+
+        .header-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 11px; color: var(--text-light);
+            letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px;
+        }
+
+        .header-right { display: flex; gap: 10px; align-items: center; }
+
+        .btn {
+            display: flex; align-items: center; gap: 8px;
+            border: none; padding: 10px 18px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s ease;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy);
+            box-shadow: 0 4px 14px rgba(201,168,76,0.25);
+        }
+
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.4); }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: var(--white);
+            box-shadow: 0 4px 14px rgba(76,175,80,0.25);
+        }
+
+        .btn-green:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.4); }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-mid);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        /* Admin-only buttons hidden by default */
+        .admin-only { display: none; }
+
+        main {
+            position: relative; z-index: 1;
+            padding: 36px 40px;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { transform: translateY(24px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            font-size: 11px; color: var(--text-light);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px; font-weight: 700; color: var(--white);
+        }
+
+        .stat-value.green { color: var(--blue-light); }
+        .stat-value.gold  { color: var(--gold-light); }
+        .stat-value.red   { color: var(--red-light); }
+
+        /* Filters */
+        .filters-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            padding: 9px 14px;
+            outline: none;
+            transition: all 0.2s ease;
+            min-width: 180px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--blue-light);
+            background: rgba(76,175,80,0.1);
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+        }
+
+        .filter-input::placeholder { color: rgba(255,255,255,0.25); }
+        .filter-input option { background: var(--navy-light); }
+
+        /* Table */
+        .table-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px; color: var(--white);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .table-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px; height: 18px;
+            background: linear-gradient(to bottom, var(--gold), var(--blue));
+            border-radius: 2px;
+        }
+
+        .month-badge {
+            font-size: 12px; font-weight: 600;
+            background: rgba(76,175,80,0.15);
+            color: var(--blue-light);
+            border: 1px solid rgba(76,175,80,0.25);
+            padding: 4px 12px; border-radius: 20px;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%; border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: rgba(255,255,255,0.04);
+            color: var(--gold-light);
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: left;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover { background: rgba(76,175,80,0.05); }
+        tbody tr:last-child { border-bottom: none; }
+
+        tbody td {
+            padding: 14px 16px;
+            color: var(--text-mid);
+            vertical-align: middle;
+        }
+
+        td.item-desc {
+            color: var(--white);
+            font-weight: 500;
+            max-width: 200px;
+        }
+
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+
+        .badge-ok      { background: rgba(76,175,80,0.15);  color: var(--blue-light); border: 1px solid rgba(76,175,80,0.25); }
+        .badge-low     { background: rgba(251,191,36,0.15); color: #fde68a;            border: 1px solid rgba(251,191,36,0.25); }
+        .badge-zero    { background: rgba(239,68,68,0.15);  color: var(--red-light);  border: 1px solid rgba(239,68,68,0.25); }
+
+        .btn-issue {
+            background: rgba(239,68,68,0.15);
+            color: var(--red-light);
+            border: 1px solid rgba(239,68,68,0.25);
+            padding: 6px 14px; border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+
+        .btn-issue:hover { background: rgba(239,68,68,0.25); transform: translateY(-1px); }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state div { font-size: 40px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+
+        /* Loading */
+        .loading {
+            text-align: center; padding: 60px;
+            color: var(--text-light); font-size: 14px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px; height: 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--blue-light);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 10px; vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Issue Popup */
+        #overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(5,12,28,0.75);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+        }
+
+        .popup {
+            display: none; position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 32px; z-index: 10000;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            width: 480px; max-width: 95vw;
+            animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+
+        .popup h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px; color: var(--white);
+            margin-bottom: 24px; padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .popup h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px; height: 20px;
+            background: linear-gradient(to bottom, var(--red-light), var(--gold));
+            border-radius: 2px;
+        }
+
+        .form-group { margin-bottom: 18px; }
+
+        .form-label {
+            display: block; font-size: 11px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--text-light); margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; padding: 10px 14px;
+            outline: none; transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--blue-light);
+            background: rgba(76,175,80,0.1);
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+        }
+
+        .form-input[readonly] { color: var(--gold-light); opacity: 0.8; }
+        .form-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+
+        .btn-cancel {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-mid);
+            border: 1px solid var(--border);
+            padding: 10px 22px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, var(--red), #dc2626);
+            color: var(--white);
+            border: none; padding: 10px 22px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+        }
+
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(239,68,68,0.45); }
+
+        /* Toast */
+        #toast {
+            display: none; position: fixed;
+            bottom: 30px; right: 30px; z-index: 99999;
+            padding: 16px 22px; border-radius: 10px;
+            font-size: 13px; font-weight: 500;
+            max-width: 360px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+            line-height: 1.5;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .toast-success { background: linear-gradient(135deg, #064e3b, #065f46); border: 1px solid rgba(52,211,153,0.3); color: #6ee7b7; }
+        .toast-error   { background: linear-gradient(135deg, #7f1d1d, #991b1b); border: 1px solid rgba(239,68,68,0.3);   color: #fca5a5; }
+        .toast-title   { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
+
+        /* Settings dropdown (same as index.html) */
+        .settings-wrapper { position: relative; }
+
+        .btn-settings {
+            width: 38px; height: 38px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-mid);
+            cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 16px; transition: all 0.2s ease;
+        }
+
+        .btn-settings:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        .settings-dropdown {
+            display: none; position: absolute;
+            top: 46px; right: 0;
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 8px;
+            min-width: 200px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            z-index: 9999;
+            animation: dropDown 0.2s ease;
+        }
+
+        @keyframes dropDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-dropdown.open { display: block; }
+
+        .dropdown-user { padding: 10px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+        .dropdown-username { font-size: 13px; font-weight: 600; color: var(--white); }
+        .dropdown-role { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+        .dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border-radius: 7px;
+            font-size: 13px; color: var(--text-mid);
+            cursor: pointer; transition: all 0.2s ease;
+            border: none; background: none; width: 100%;
+            text-align: left; font-family: 'DM Sans', sans-serif;
+        }
+
+        .dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+        .dropdown-item.danger { color: #f87171; }
+        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-logo">G</div>
+        <div>
+            <div class="header-title">Stock Register</div>
+            <div class="header-subtitle">Live Inventory Levels</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="btn btn-ghost" onclick="window.location.href='audit.html'">📋 Audit Log</button>
+        <button class="btn btn-gold admin-only" id="seedBtn" onclick="seedOpeningStock()">🌱 Seed Opening Stock</button>
+        <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
+        <div class="settings-wrapper">
+            <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
+            <div class="settings-dropdown" id="settingsDropdown">
+                <div class="dropdown-user">
+                    <div class="dropdown-username" id="dropdownUsername">Loading...</div>
+                    <div class="dropdown-role" id="dropdownRole"></div>
+                </div>
+                <button class="dropdown-item" onclick="window.location.href='index.html'">📦 GRN Register</button>
+                <button class="dropdown-item" onclick="window.location.href='audit.html'">📋 Audit Log</button>
+                <button class="dropdown-item admin-only" onclick="window.location.href='admin.html'">👥 Manage Users</button>
+                <button class="dropdown-item danger" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Total Items</div>
+            <div class="stat-value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">In Stock</div>
+            <div class="stat-value green" id="statInStock">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Low Stock</div>
+            <div class="stat-value gold" id="statLow">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Out of Stock</div>
+            <div class="stat-value red" id="statOut">—</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-card">
+        <input class="filter-input" id="filterItem" placeholder="🔍 Search item..." oninput="applyFilters()">
+        <select class="filter-input" id="filterStatus" onchange="applyFilters()">
+            <option value="">All Status</option>
+            <option value="ok">In Stock</option>
+            <option value="low">Low Stock</option>
+            <option value="zero">Out of Stock</option>
+        </select>
+        <input class="filter-input" type="month" id="filterMonth" onchange="loadStock()">
+        <button class="btn btn-ghost" onclick="resetFilters()">✕ Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">Stock Levels</div>
+            <div class="month-badge" id="monthBadge">Loading...</div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Item Description</th>
+                        <th>UOM</th>
+                        <th class="num">Opening Qty</th>
+                        <th class="num">Opening Rate (₹)</th>
+                        <th class="num">Total Received</th>
+                        <th class="num">Total Issued</th>
+                        <th class="num">Closing Stock</th>
+                        <th class="num">Weighted Avg Rate (₹)</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="stockBody">
+                    <tr><td colspan="11" class="loading"><span class="spinner"></span>Loading stock data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Overlay -->
+<div id="overlay" onclick="closeIssuePopup()"></div>
+
+<!-- Issue Stock Popup -->
+<div id="issuePopup" class="popup">
+    <h3>Issue Stock</h3>
+    <div class="form-group">
+        <label class="form-label">Item Description</label>
+        <input class="form-input" id="issueDesc" readonly>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Available Closing Stock</label>
+        <input class="form-input" id="issueAvailable" readonly>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Quantity to Issue</label>
+        <input class="form-input" type="number" id="issueQty" min="0.01" step="0.01" placeholder="Enter quantity">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Issue Date</label>
+        <input class="form-input" type="date" id="issueDate">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Remark / Issued To</label>
+        <input class="form-input" id="issueRemark" placeholder="e.g. Production Line A">
+    </div>
+    <div class="btn-row">
+        <button class="btn-cancel" onclick="closeIssuePopup()">Cancel</button>
+        <button class="btn-confirm" onclick="confirmIssue()">Issue Stock →</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API   = "https://grn-backend-production.up.railway.app";
+const token = sessionStorage.getItem("token");
+const role  = sessionStorage.getItem("role");
+
+if (!token) window.location.href = "login.html";
+
+let allStockItems = []; // full dataset for client-side filtering
+
+// ✅ Auth setup
+function checkAuth() {
+    const username = sessionStorage.getItem("username");
+    document.getElementById("dropdownUsername").textContent = username || "User";
+    document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
+
+    // Show admin-only elements
+    if (role === "admin" || role === "store_manager") {
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "flex");
+    }
+}
+
+// ✅ Settings dropdown
+function toggleSettings() {
+    document.getElementById("settingsDropdown").classList.toggle("open");
+}
+
+document.addEventListener("click", e => {
+    const wrapper = document.querySelector(".settings-wrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById("settingsDropdown").classList.remove("open");
+    }
+});
+
+async function logout() {
+    try {
+        await fetch(`${API}/logout`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+    } catch(e) {}
+    sessionStorage.clear();
+    window.location.href = "login.html";
+}
+
+// ✅ Load stock data
+async function loadStock() {
+    const monthInput = document.getElementById("filterMonth").value;
+    const url = monthInput ? `${API}/stockItems?month=${monthInput}` : `${API}/stockItems`;
+
+    document.getElementById("stockBody").innerHTML =
+        `<tr><td colspan="11" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
+
+    try {
+        const res  = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+        const data = await res.json();
+
+        allStockItems = data.items || [];
+
+        // Update month badge
+        const monthNames = ["January","February","March","April","May","June",
+                            "July","August","September","October","November","December"];
+        const [yr, mo] = data.month.split("-");
+        document.getElementById("monthBadge").textContent =
+            `${monthNames[parseInt(mo) - 1]} ${yr}`;
+
+        applyFilters();
+
+    } catch (err) {
+        document.getElementById("stockBody").innerHTML =
+            `<tr><td colspan="11" class="empty-state"><div>⚠️</div><p>Failed to load stock data.</p></td></tr>`;
+    }
+}
+
+// ✅ Apply client-side filters
+function applyFilters() {
+    const search       = document.getElementById("filterItem").value.toLowerCase().trim();
+    const statusFilter = document.getElementById("filterStatus").value;
+
+    let filtered = allStockItems.filter(item => {
+        const matchSearch = !search || item.desc.toLowerCase().includes(search);
+        const closing     = item.closingQty;
+        let statusKey     = closing > 5 ? "ok" : closing > 0 ? "low" : "zero";
+        const matchStatus = !statusFilter || statusFilter === statusKey;
+        return matchSearch && matchStatus;
+    });
+
+    renderTable(filtered);
+    updateStats(allStockItems); // stats always show full picture
+}
+
+// ✅ Render table
+function renderTable(items) {
+    const tbody = document.getElementById("stockBody");
+
+    if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="11" class="empty-state"><div>📦</div><p>No stock items found.</p></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = items.map((item, idx) => {
+        const totalReceived = item.receipts.reduce((s, r) => s + r.qty, 0);
+        const totalIssued   = item.issues.reduce((s, i) => s + i.qty, 0);
+        const closing       = item.closingQty;
+
+        const statusKey   = closing > 5 ? "ok" : closing > 0 ? "low" : "zero";
+        const statusLabel = closing > 5 ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
+        const badgeClass  = `badge badge-${statusKey}`;
+
+        const canIssue = (role === "admin" || role === "store_manager" || role === "warehouse_worker");
+
+        return `<tr>
+            <td>${idx + 1}</td>
+            <td class="item-desc">${item.desc}</td>
+            <td>${item.uom || "—"}</td>
+            <td class="num">${fmt(item.openingQty)}</td>
+            <td class="num">₹${fmt(item.openingRate)}</td>
+            <td class="num">${fmt(totalReceived)}</td>
+            <td class="num">${fmt(totalIssued)}</td>
+            <td class="num" style="color:${closing <= 0 ? 'var(--red-light)' : closing <= 5 ? '#fde68a' : 'var(--blue-light)'}; font-weight:600;">
+                ${fmt(closing)}
+            </td>
+            <td class="num">₹${fmt(item.weightedAvgRate)}</td>
+            <td><span class="${badgeClass}">${statusLabel}</span></td>
+            <td>${canIssue
+                ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${closing})">− Issue</button>`
+                : "—"
+            }</td>
+        </tr>`;
+    }).join("");
+}
+
+// ✅ Update stats cards
+function updateStats(items) {
+    const total   = items.length;
+    const inStock = items.filter(i => i.closingQty > 5).length;
+    const low     = items.filter(i => i.closingQty > 0 && i.closingQty <= 5).length;
+    const out     = items.filter(i => i.closingQty <= 0).length;
+
+    document.getElementById("statTotal").textContent   = total;
+    document.getElementById("statInStock").textContent = inStock;
+    document.getElementById("statLow").textContent     = low;
+    document.getElementById("statOut").textContent     = out;
+}
+
+function fmt(val) {
+    const n = parseFloat(val);
+    return isNaN(n) ? "0" : n % 1 === 0 ? n.toString() : n.toFixed(2);
+}
+
+function resetFilters() {
+    document.getElementById("filterItem").value   = "";
+    document.getElementById("filterStatus").value = "";
+    document.getElementById("filterMonth").value  = "";
+    loadStock();
+}
+
+// ✅ Issue stock popup
+let currentIssueDesc = "";
+
+function openIssuePopup(desc, available) {
+    currentIssueDesc = desc;
+    document.getElementById("issueDesc").value      = desc;
+    document.getElementById("issueAvailable").value = available;
+    document.getElementById("issueQty").value       = "";
+    document.getElementById("issueRemark").value    = "";
+    document.getElementById("issueDate").value      = new Date().toISOString().split("T")[0];
+    document.getElementById("issuePopup").style.display = "block";
+    document.getElementById("overlay").style.display   = "block";
+}
+
+function closeIssuePopup() {
+    document.getElementById("issuePopup").style.display = "none";
+    document.getElementById("overlay").style.display   = "none";
+}
+
+async function confirmIssue() {
+    const qty    = parseFloat(document.getElementById("issueQty").value);
+    const date   = document.getElementById("issueDate").value;
+    const remark = document.getElementById("issueRemark").value;
+    const avail  = parseFloat(document.getElementById("issueAvailable").value);
+
+    if (!qty || qty <= 0)   { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
+    if (!date)              { showToast("error", "Date Required",    "Please select an issue date.");   return; }
+    if (qty > avail)        { showToast("error", "Insufficient Stock", `Only ${avail} units available.`); return; }
+
+    try {
+        const res = await fetch(`${API}/issueStock`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                desc:   currentIssueDesc,
+                qty,
+                date,
+                remark
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Issue Failed", data.error || "Could not issue stock."); return; }
+
+        showToast("success", "Stock Issued", `${qty} units of "${currentIssueDesc}" issued successfully.`);
+        closeIssuePopup();
+        loadStock(); // refresh table
+
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
+}
+
+// ✅ Seed opening stock (admin/store manager)
+async function seedOpeningStock() {
+    if (!confirm("This will seed opening stock from the uploaded Stock Register Excel.\n\nContinue?")) return;
+    const btn = document.getElementById("seedBtn");
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Seeding...";
+
+    try {
+        const res  = await fetch(`${API}/seedOpeningStock`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Seed Failed", data.error || "Could not seed stock."); }
+        else {
+            showToast("success", "Opening Stock Seeded", `${data.seeded} items loaded for this month.`);
+            loadStock();
+        }
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "🌱 Seed Opening Stock";
+    }
+}
+
+// ✅ Toast
+function showToast(type, title, message) {
+    const toast = document.getElementById("toast");
+    toast.className = type === "success" ? "toast-success" : "toast-error";
+    toast.innerHTML = `<div class="toast-title">${type === "success" ? "✅" : "⚠️"} ${title}</div><div>${message}</div>`;
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 5000);
+}
+
+// ✅ Init
+document.addEventListener("DOMContentLoaded", () => {
+    checkAuth();
+    loadStock();
+});
+</script>
+</body>
+</html>

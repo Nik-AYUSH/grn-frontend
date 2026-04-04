@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:       #0a1f0f;
+            --navy-mid:   #0f2d15;
+            --navy-light: #174d20;
+            --blue:       #4CAF50;
+            --blue-light: #66BB6A;
+            --gold:       #c9a84c;
+            --gold-light: #e2c07a;
+            --white:      #ffffff;
+            --text-light: #94a3b8;
+            --text-mid:   #cbd5e1;
+            --border:     rgba(255,255,255,0.08);
+            --shadow:     0 25px 60px rgba(0,0,0,0.4);
+            --radius:     14px;
+            --red:        #ef4444;
+            --red-light:  #f87171;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(76,175,80,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+
+        header {
+            position: relative; z-index: 10;
+            background: linear-gradient(135deg, var(--navy-mid), var(--navy-light));
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 72px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            animation: slideDown 0.6s ease both;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0);     opacity: 1; }
+        }
+
+        .header-left { display: flex; align-items: center; gap: 14px; }
+
+        .header-logo {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: var(--navy);
+            box-shadow: 0 4px 12px rgba(201,168,76,0.3);
+        }
+
+        .header-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 11px; color: var(--text-light);
+            letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px;
+        }
+
+        .header-right { display: flex; gap: 10px; align-items: center; }
+
+        .btn {
+            display: flex; align-items: center; gap: 8px;
+            border: none; padding: 10px 18px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s ease;
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: var(--white);
+            box-shadow: 0 4px 14px rgba(76,175,80,0.25);
+        }
+
+        .btn-green:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.4); }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-mid);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        /* Settings dropdown */
+        .settings-wrapper { position: relative; }
+
+        .btn-settings {
+            width: 38px; height: 38px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text-mid); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; transition: all 0.2s ease;
+        }
+
+        .btn-settings:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        .settings-dropdown {
+            display: none; position: absolute;
+            top: 46px; right: 0;
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 8px; min-width: 200px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            z-index: 9999; animation: dropDown 0.2s ease;
+        }
+
+        @keyframes dropDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-dropdown.open { display: block; }
+        .dropdown-user { padding: 10px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+        .dropdown-username { font-size: 13px; font-weight: 600; color: var(--white); }
+        .dropdown-role { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+        .dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border-radius: 7px;
+            font-size: 13px; color: var(--text-mid);
+            cursor: pointer; transition: all 0.2s ease;
+            border: none; background: none; width: 100%;
+            text-align: left; font-family: 'DM Sans', sans-serif;
+        }
+
+        .dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+        .dropdown-item.danger { color: #f87171; }
+        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+        .admin-only { display: none; }
+
+        main {
+            position: relative; z-index: 1;
+            padding: 36px 40px;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { transform: translateY(24px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label { font-size: 11px; color: var(--text-light); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--white); }
+        .stat-value.green { color: var(--blue-light); }
+        .stat-value.red   { color: var(--red-light); }
+        .stat-value.gold  { color: var(--gold-light); }
+
+        /* Filters */
+        .filters-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px; margin-bottom: 20px;
+            display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+        }
+
+        .filter-input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; padding: 9px 14px;
+            outline: none; transition: all 0.2s ease;
+            min-width: 160px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--blue-light);
+            background: rgba(76,175,80,0.1);
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+        }
+
+        .filter-input::placeholder { color: rgba(255,255,255,0.25); }
+        .filter-input option { background: var(--navy-light); }
+
+        /* Table */
+        .table-card {
+            background: linear-gradient(145deg, var(--navy-mid), var(--navy-light));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden; box-shadow: var(--shadow);
+        }
+
+        .table-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .table-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px; color: var(--white);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .table-title::before {
+            content: ''; display: inline-block;
+            width: 4px; height: 18px;
+            background: linear-gradient(to bottom, var(--gold), var(--blue));
+            border-radius: 2px;
+        }
+
+        .result-count {
+            font-size: 12px; color: var(--text-light);
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px; border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            background: rgba(255,255,255,0.04);
+            color: var(--gold-light);
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 14px 16px; border-bottom: 1px solid var(--border);
+            white-space: nowrap; text-align: left; cursor: pointer;
+            user-select: none; transition: color 0.2s ease;
+        }
+
+        thead th:hover { color: var(--white); }
+        thead th.sorted { color: var(--blue-light); }
+
+        tbody tr { border-bottom: 1px solid var(--border); transition: background 0.2s ease; }
+        tbody tr:hover { background: rgba(76,175,80,0.05); }
+        tbody tr:last-child { border-bottom: none; }
+
+        tbody td { padding: 13px 16px; color: var(--text-mid); vertical-align: middle; }
+
+        td.item-name { color: var(--white); font-weight: 500; max-width: 200px; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        td.timestamp { font-size: 12px; color: var(--text-light); white-space: nowrap; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+
+        .badge-grn   { background: rgba(76,175,80,0.15);  color: var(--blue-light); border: 1px solid rgba(76,175,80,0.25); }
+        .badge-issue { background: rgba(239,68,68,0.15);  color: var(--red-light);  border: 1px solid rgba(239,68,68,0.25); }
+
+        .btn-delete {
+            background: rgba(239,68,68,0.1);
+            color: var(--red-light);
+            border: 1px solid rgba(239,68,68,0.2);
+            padding: 5px 12px; border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover { background: rgba(239,68,68,0.25); transform: translateY(-1px); }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+        .empty-state div { font-size: 40px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+
+        .loading { text-align: center; padding: 60px; color: var(--text-light); font-size: 14px; }
+
+        .spinner {
+            display: inline-block; width: 24px; height: 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--blue-light);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 10px; vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Confirm delete popup */
+        #overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(5,12,28,0.75);
+            backdrop-filter: blur(6px); z-index: 9999;
+        }
+
+        .popup {
+            display: none; position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, #162847, #1a3055);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius); padding: 32px;
+            z-index: 10000; box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            width: 420px; max-width: 95vw;
+            animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+
+        .popup h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px; color: var(--white);
+            margin-bottom: 12px;
+        }
+
+        .popup p { font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 24px; }
+
+        .popup-detail {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 8px; padding: 14px 16px;
+            margin-bottom: 24px; font-size: 13px;
+            color: var(--text-mid); line-height: 1.8;
+        }
+
+        .popup-detail strong { color: var(--white); }
+
+        .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .btn-cancel {
+            background: rgba(255,255,255,0.07); color: var(--text-mid);
+            border: 1px solid var(--border); padding: 10px 22px;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+        .btn-confirm-delete {
+            background: linear-gradient(135deg, var(--red), #dc2626);
+            color: var(--white); border: none; padding: 10px 22px;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+        }
+
+        .btn-confirm-delete:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(239,68,68,0.45); }
+
+        /* Toast */
+        #toast {
+            display: none; position: fixed;
+            bottom: 30px; right: 30px; z-index: 99999;
+            padding: 16px 22px; border-radius: 10px;
+            font-size: 13px; font-weight: 500; max-width: 360px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+            line-height: 1.5;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .toast-success { background: linear-gradient(135deg, #064e3b, #065f46); border: 1px solid rgba(52,211,153,0.3); color: #6ee7b7; }
+        .toast-error   { background: linear-gradient(135deg, #7f1d1d, #991b1b); border: 1px solid rgba(239,68,68,0.3);   color: #fca5a5; }
+        .toast-title   { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
+
+        /* Pagination */
+        .pagination {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .page-btn {
+            width: 34px; height: 34px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 7px; color: var(--text-mid);
+            font-family: 'DM Sans', sans-serif; font-size: 13px;
+            cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .page-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+        .page-btn.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-logo">G</div>
+        <div>
+            <div class="header-title">Audit Log</div>
+            <div class="header-subtitle">Stock Movement History</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="btn btn-ghost" onclick="window.location.href='stock.html'">📦 Stock Register</button>
+        <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
+        <div class="settings-wrapper">
+            <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
+            <div class="settings-dropdown" id="settingsDropdown">
+                <div class="dropdown-user">
+                    <div class="dropdown-username" id="dropdownUsername">Loading...</div>
+                    <div class="dropdown-role" id="dropdownRole"></div>
+                </div>
+                <button class="dropdown-item" onclick="window.location.href='index.html'">📦 GRN Register</button>
+                <button class="dropdown-item" onclick="window.location.href='stock.html'">📊 Stock Register</button>
+                <button class="dropdown-item admin-only" onclick="window.location.href='admin.html'">👥 Manage Users</button>
+                <button class="dropdown-item danger" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Total Movements</div>
+            <div class="stat-value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">GRN Receipts</div>
+            <div class="stat-value green" id="statGRN">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Issues</div>
+            <div class="stat-value red" id="statIssue">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unique Items</div>
+            <div class="stat-value gold" id="statItems">—</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-card">
+        <input  class="filter-input" id="filterItem" placeholder="🔍 Search item..." oninput="applyFilters()">
+        <select class="filter-input" id="filterType" onchange="applyFilters()">
+            <option value="">All Types</option>
+            <option value="GRN">GRN Receipt</option>
+            <option value="Issue">Issue</option>
+        </select>
+        <input class="filter-input" type="date" id="filterFrom" onchange="applyFilters()" placeholder="From date">
+        <input class="filter-input" type="date" id="filterTo"   onchange="applyFilters()" placeholder="To date">
+        <input class="filter-input" id="filterUser" placeholder="👤 Search user..." oninput="applyFilters()">
+        <button class="btn btn-ghost" onclick="resetFilters()">✕ Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">Movement History</div>
+            <div class="result-count" id="resultCount">Loading...</div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th onclick="sortBy('timestamp')"  id="th-timestamp">Date & Time ↕</th>
+                        <th onclick="sortBy('itemDesc')"   id="th-itemDesc">Item Description ↕</th>
+                        <th onclick="sortBy('type')"       id="th-type">Type ↕</th>
+                        <th class="num" onclick="sortBy('qty')"  id="th-qty">Quantity ↕</th>
+                        <th class="num" onclick="sortBy('rate')" id="th-rate">Rate (₹) ↕</th>
+                        <th onclick="sortBy('grnNo')"      id="th-grnNo">GRN No ↕</th>
+                        <th>Remark</th>
+                        <th onclick="sortBy('doneBy')"     id="th-doneBy">Done By ↕</th>
+                        <th class="admin-only">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="auditBody">
+                    <tr><td colspan="9" class="loading"><span class="spinner"></span>Loading audit log...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+</main>
+
+<!-- Overlay -->
+<div id="overlay" onclick="closeDeletePopup()"></div>
+
+<!-- Confirm Delete Popup -->
+<div id="deletePopup" class="popup">
+    <h3>⚠️ Delete Audit Entry</h3>
+    <p>This will permanently remove this movement from the audit log. This does <strong>not</strong> reverse the actual stock change.</p>
+    <div class="popup-detail" id="deleteDetail"></div>
+    <div class="btn-row">
+        <button class="btn-cancel" onclick="closeDeletePopup()">Cancel</button>
+        <button class="btn-confirm-delete" onclick="confirmDelete()">Delete Entry</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API   = "https://grn-backend-production.up.railway.app";
+const token = sessionStorage.getItem("token");
+const role  = sessionStorage.getItem("role");
+
+if (!token) window.location.href = "login.html";
+
+const PAGE_SIZE = 25;
+let allEntries     = [];  // full unfiltered data
+let filteredEntries = []; // after filters applied
+let currentPage    = 1;
+let sortField      = "timestamp";
+let sortDir        = "desc";
+let pendingDeleteId = null;
+
+// ✅ Auth
+function checkAuth() {
+    const username = sessionStorage.getItem("username");
+    document.getElementById("dropdownUsername").textContent = username || "User";
+    document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
+    if (role === "admin") {
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "flex");
+    }
+}
+
+function toggleSettings() {
+    document.getElementById("settingsDropdown").classList.toggle("open");
+}
+
+document.addEventListener("click", e => {
+    const wrapper = document.querySelector(".settings-wrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById("settingsDropdown").classList.remove("open");
+    }
+});
+
+async function logout() {
+    try {
+        await fetch(`${API}/logout`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+    } catch(e) {}
+    sessionStorage.clear();
+    window.location.href = "login.html";
+}
+
+// ✅ Load audit log
+async function loadAudit() {
+    document.getElementById("auditBody").innerHTML =
+        `<tr><td colspan="9" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
+
+    try {
+        const res  = await fetch(`${API}/auditLog`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        allEntries = Array.isArray(data) ? data : [];
+        updateStats(allEntries);
+        applyFilters();
+    } catch (err) {
+        document.getElementById("auditBody").innerHTML =
+            `<tr><td colspan="9" class="empty-state"><div>⚠️</div><p>Failed to load audit log.</p></td></tr>`;
+    }
+}
+
+// ✅ Apply filters + sort — all client-side
+function applyFilters() {
+    const item   = document.getElementById("filterItem").value.toLowerCase().trim();
+    const type   = document.getElementById("filterType").value;
+    const from   = document.getElementById("filterFrom").value;
+    const to     = document.getElementById("filterTo").value;
+    const user   = document.getElementById("filterUser").value.toLowerCase().trim();
+
+    filteredEntries = allEntries.filter(e => {
+        if (item && !e.itemDesc?.toLowerCase().includes(item))   return false;
+        if (type && e.type !== type)                             return false;
+        if (from && new Date(e.timestamp) < new Date(from))     return false;
+        if (to   && new Date(e.timestamp) > new Date(to + "T23:59:59")) return false;
+        if (user && !e.doneBy?.toLowerCase().includes(user))    return false;
+        return true;
+    });
+
+    // Sort
+    filteredEntries.sort((a, b) => {
+        let va = a[sortField] ?? "";
+        let vb = b[sortField] ?? "";
+        if (sortField === "timestamp") { va = new Date(va); vb = new Date(vb); }
+        if (sortField === "qty" || sortField === "rate") { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; }
+        if (va < vb) return sortDir === "asc" ? -1 : 1;
+        if (va > vb) return sortDir === "asc" ?  1 : -1;
+        return 0;
+    });
+
+    currentPage = 1;
+    document.getElementById("resultCount").textContent = `${filteredEntries.length} records`;
+    renderPage();
+}
+
+// ✅ Sort by column
+function sortBy(field) {
+    if (sortField === field) {
+        sortDir = sortDir === "asc" ? "desc" : "asc";
+    } else {
+        sortField = field;
+        sortDir   = "desc";
+    }
+
+    // Update header highlights
+    document.querySelectorAll("thead th").forEach(th => th.classList.remove("sorted"));
+    const thEl = document.getElementById(`th-${field}`);
+    if (thEl) thEl.classList.add("sorted");
+
+    applyFilters();
+}
+
+// ✅ Render current page
+function renderPage() {
+    const start  = (currentPage - 1) * PAGE_SIZE;
+    const end    = start + PAGE_SIZE;
+    const page   = filteredEntries.slice(start, end);
+    const tbody  = document.getElementById("auditBody");
+    const isAdmin = role === "admin";
+
+    if (!page.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><div>📋</div><p>No audit entries found.</p></td></tr>`;
+        document.getElementById("pagination").innerHTML = "";
+        return;
+    }
+
+    tbody.innerHTML = page.map(entry => {
+        const dt      = new Date(entry.timestamp);
+        const dateStr = dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+        const timeStr = dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+        const isGRN   = entry.type === "GRN";
+
+        return `<tr>
+            <td class="timestamp">${dateStr}<br><span style="font-size:11px;opacity:0.6">${timeStr}</span></td>
+            <td class="item-name">${entry.itemDesc || "—"}</td>
+            <td><span class="badge ${isGRN ? "badge-grn" : "badge-issue"}">${isGRN ? "📥 GRN" : "📤 Issue"}</span></td>
+            <td class="num" style="color:${isGRN ? "var(--blue-light)" : "var(--red-light)"}; font-weight:600;">
+                ${isGRN ? "+" : "−"}${entry.qty ?? 0}
+            </td>
+            <td class="num">₹${parseFloat(entry.rate || 0).toFixed(2)}</td>
+            <td>${entry.grnNo || "—"}</td>
+            <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${entry.remark || ""}">
+                ${entry.remark || "—"}
+            </td>
+            <td>${entry.doneBy || "—"}</td>
+            <td class="admin-only">
+                ${isAdmin
+                    ? `<button class="btn-delete" onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc || "").replace(/'/g, "\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
+                    : "—"
+                }
+            </td>
+        </tr>`;
+    }).join("");
+
+    renderPagination();
+}
+
+// ✅ Pagination
+function renderPagination() {
+    const total   = Math.ceil(filteredEntries.length / PAGE_SIZE);
+    const pag     = document.getElementById("pagination");
+    if (total <= 1) { pag.innerHTML = ""; return; }
+
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
+
+    for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || Math.abs(i - currentPage) <= 2) {
+            html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        } else if (Math.abs(i - currentPage) === 3) {
+            html += `<span style="color:var(--text-light);padding:0 4px">…</span>`;
+        }
+    }
+
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === total ? "disabled" : ""}>›</button>`;
+    pag.innerHTML = html;
+}
+
+function goPage(page) {
+    const total = Math.ceil(filteredEntries.length / PAGE_SIZE);
+    if (page < 1 || page > total) return;
+    currentPage = page;
+    renderPage();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ✅ Stats
+function updateStats(entries) {
+    const grn     = entries.filter(e => e.type === "GRN").length;
+    const issues  = entries.filter(e => e.type === "Issue").length;
+    const unique  = new Set(entries.map(e => e.itemDesc)).size;
+    document.getElementById("statTotal").textContent  = entries.length;
+    document.getElementById("statGRN").textContent    = grn;
+    document.getElementById("statIssue").textContent  = issues;
+    document.getElementById("statItems").textContent  = unique;
+}
+
+function resetFilters() {
+    ["filterItem", "filterType", "filterFrom", "filterTo", "filterUser"]
+        .forEach(id => document.getElementById(id).value = "");
+    applyFilters();
+}
+
+// ✅ Delete popup
+function openDeletePopup(id, desc, type, qty) {
+    pendingDeleteId = id;
+    document.getElementById("deleteDetail").innerHTML =
+        `<strong>Item:</strong> ${desc}<br>
+         <strong>Type:</strong> ${type}<br>
+         <strong>Quantity:</strong> ${qty}`;
+    document.getElementById("deletePopup").style.display = "block";
+    document.getElementById("overlay").style.display    = "block";
+}
+
+function closeDeletePopup() {
+    pendingDeleteId = null;
+    document.getElementById("deletePopup").style.display = "none";
+    document.getElementById("overlay").style.display    = "none";
+}
+
+async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    try {
+        const res = await fetch(`${API}/auditLog/${pendingDeleteId}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Delete Failed", data.error || "Could not delete entry."); return; }
+        showToast("success", "Entry Deleted", "Audit entry removed successfully.");
+        closeDeletePopup();
+        // Remove from local array — no need to refetch
+        allEntries = allEntries.filter(e => e.id !== pendingDeleteId);
+        updateStats(allEntries);
+        applyFilters();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
+}
+
+// ✅ Toast
+function showToast(type, title, message) {
+    const toast = document.getElementById("toast");
+    toast.className = type === "success" ? "toast-success" : "toast-error";
+    toast.innerHTML = `<div class="toast-title">${type === "success" ? "✅" : "⚠️"} ${title}</div><div>${message}</div>`;
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 5000);
+}
+
+// ✅ Init
+document.addEventListener("DOMContentLoaded", () => {
+    checkAuth();
+    loadAudit();
+});
+</script>
+</body>
+</html>
