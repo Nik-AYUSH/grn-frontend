@@ -513,6 +513,7 @@
                         <th class="num">Opening Qty</th>
                         <th class="num">Opening Rate (₹)</th>
                         <th class="num">Total Received</th>
+                        <th class="num">GRN Rate (₹)</th>
                         <th class="num">Total Issued</th>
                         <th class="num">Closing Stock</th>
                         <th class="num">Weighted Avg Rate (₹)</th>
@@ -613,7 +614,7 @@ async function loadStock() {
         applyFilters();
     } catch (err) {
         document.getElementById("stockBody").innerHTML =
-            `<tr><td colspan="11" class="empty-state"><div>⚠️</div><p>Failed to load stock data.</p></td></tr>`;
+            `<tr><td colspan="12" class="empty-state"><div>⚠️</div><p>Failed to load stock data.</p></td></tr>`;
     }
 }
 
@@ -634,10 +635,13 @@ function applyFilters() {
 function renderTable(items) {
     const tbody = document.getElementById("stockBody");
     if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="11" class="empty-state"><div>📦</div><p>No stock items found.</p></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><div>📦</div><p>No stock items found.</p></td></tr>`;
         return;
     }
-    tbody.innerHTML = items.map((item, idx) => {
+
+    let html = "";
+
+    items.forEach((item, idx) => {
         const totalReceived = item.receipts.reduce((s, r) => s + r.qty, 0);
         const totalIssued   = item.issues.reduce((s, i) => s + i.qty, 0);
         const closing       = item.closingQty;
@@ -645,22 +649,48 @@ function renderTable(items) {
         const statusLabel   = closing > 5 ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
         const canIssue      = (role === "admin" || role === "store_manager" || role === "warehouse_worker");
         const closingColor  = closing <= 0 ? "var(--red)" : closing <= 5 ? "var(--gold)" : "var(--green-dark)";
-        return `<tr>
-            <td>${idx + 1}</td>
-            <td class="item-desc">${item.desc}</td>
-            <td>${item.uom || "—"}</td>
-            <td class="num">${fmt(item.openingQty)}</td>
-            <td class="num">₹${fmt(item.openingRate)}</td>
-            <td class="num">${fmt(totalReceived)}</td>
-            <td class="num">${fmt(totalIssued)}</td>
-            <td class="num" style="color:${closingColor}; font-weight:600;">${fmt(closing)}</td>
-            <td class="num">₹${fmt(item.weightedAvgRate)}</td>
-            <td><span class="badge badge-${statusKey}">${statusLabel}</span></td>
-            <td>${canIssue
-                ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.openingQty})">− Issue</button>`
-                : "—"}</td>
-        </tr>`;
-    }).join("");
+
+        const receipts = item.receipts;
+        // ✅ If no receipts, render single row with empty GRN rate
+        const rowCount = Math.max(receipts.length, 1);
+
+        for (let i = 0; i < rowCount; i++) {
+            const receipt = receipts[i] || null;
+            const isFirst = i === 0;
+            const isEven  = idx % 2 === 0;
+            const rowBg   = isFirst
+                ? (isEven ? "" : "background:var(--green-pale2);")
+                : "background:rgba(201,168,76,0.04);"; // ✅ subtle tint for sub-rows
+
+            html += `<tr style="${rowBg}">
+                <td>${isFirst ? idx + 1 : ""}</td>
+                <td class="item-desc">${isFirst ? item.desc : ""}</td>
+                <td>${isFirst ? (item.uom || "—") : ""}</td>
+                <td class="num">${isFirst ? fmt(item.openingQty) : ""}</td>
+                <td class="num">${isFirst ? "₹" + fmt(item.openingRate) : ""}</td>
+                <td class="num">${isFirst ? fmt(totalReceived) : ""}</td>
+                <td class="num" style="color:var(--gold);font-weight:500;">
+                    ${receipt ? "₹" + fmt(receipt.rate) : "—"}
+                    ${receipt && receipt.grnNo ? `<br><span style="font-size:10px;color:var(--text-light);">GRN: ${receipt.grnNo}</span>` : ""}
+                    ${receipt && receipt.date  ? `<br><span style="font-size:10px;color:var(--text-light);">${new Date(receipt.date).toLocaleDateString("en-IN")}</span>` : ""}
+                </td>
+                <td class="num">${isFirst ? fmt(totalIssued) : ""}</td>
+                <td class="num" style="color:${isFirst ? closingColor : ""}; font-weight:${isFirst ? "600" : "400"};">
+                    ${isFirst ? fmt(closing) : ""}
+                </td>
+                <td class="num" style="font-weight:${isFirst ? "600" : "400"}; color:var(--green-dark);">
+                    ${isFirst ? "₹" + fmt(item.weightedAvgRate) : ""}
+                </td>
+                <td>${isFirst ? `<span class="badge badge-${statusKey}">${statusLabel}</span>` : ""}</td>
+                <td>${isFirst && canIssue
+                    ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.openingQty})">− Issue</button>`
+                    : ""
+                }</td>
+            </tr>`;
+        }
+    });
+
+    tbody.innerHTML = html;
 }
 
 function updateStats(items) {
