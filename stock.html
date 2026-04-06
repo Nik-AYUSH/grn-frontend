@@ -434,8 +434,119 @@
         .dropdown-item:hover { background: var(--green-pale); color: var(--green-dark); }
         .dropdown-item.danger { color: var(--red); }
         .dropdown-item.danger:hover { background: rgba(239,68,68,0.08); color: var(--red); }
+
+        /* Threshold Settings Panel */
+.threshold-panel {
+    position: fixed;
+    top: 0; right: -420px;
+    width: 420px; height: 100vh;
+    background: var(--white);
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 40px rgba(56,142,60,0.12);
+    z-index: 10001;
+    transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+.threshold-panel.open { right: 0; }
+
+.threshold-panel-header {
+    padding: 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.threshold-panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; color: var(--text-dark);
+    display: flex; align-items: center; gap: 10px;
+}
+
+.threshold-panel-title::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 18px;
+    background: linear-gradient(to bottom, var(--green-dark), var(--green-light));
+    border-radius: 2px;
+}
+
+.threshold-panel-close {
+    width: 32px; height: 32px;
+    background: var(--green-pale);
+    border: 1px solid var(--border);
+    border-radius: 7px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--text-mid);
+    transition: all 0.2s ease;
+}
+
+.threshold-panel-close:hover { background: var(--green-pale2); color: var(--text-dark); }
+
+.threshold-panel-body {
+    flex: 1; overflow-y: auto; padding: 16px 24px;
+}
+
+.threshold-panel-body::-webkit-scrollbar { width: 4px; }
+.threshold-panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+.threshold-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    gap: 12px;
+}
+
+.threshold-item:last-child { border-bottom: none; }
+
+.threshold-desc {
+    font-size: 13px; color: var(--text-dark);
+    font-weight: 500; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.threshold-input {
+    width: 80px;
+    background: var(--green-pale);
+    border: 1.5px solid var(--border);
+    border-radius: 7px; color: var(--text-dark);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; padding: 7px 10px;
+    outline: none; text-align: center;
+    transition: all 0.2s ease;
+}
+
+.threshold-input:focus {
+    border-color: var(--green);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(76,175,80,0.12);
+}
+
+.threshold-panel-footer {
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; flex-shrink: 0;
+}
+
+.threshold-note {
+    font-size: 11px; color: var(--text-light);
+    padding: 10px 24px 0;
+    flex-shrink: 0;
+}
     </style>
 </head>
+<!-- Threshold Settings Panel -->
+<div id="thresholdPanel" class="threshold-panel">
+    <div class="threshold-panel-header">
+        <div class="threshold-panel-title">Low Stock Thresholds</div>
+        <button class="threshold-panel-close" onclick="closeThresholdPanel()">✕</button>
+    </div>
+    <div class="threshold-note">
+        Set the minimum quantity below which an item is marked as "Low Stock". Default is 5.
+    </div>
+    <div class="threshold-panel-body" id="thresholdList"></div>
+    <div class="threshold-panel-footer">
+        <button class="btn btn-green" style="flex:1;" onclick="applyThresholds()">✓ Apply</button>
+        <button class="btn btn-ghost" onclick="resetThresholds()">↺ Reset All</button>
+    </div>
+</div>
 <body>
 
 <header>
@@ -450,6 +561,7 @@
         <button class="btn btn-ghost" onclick="window.location.href='audit.html'">📋 Audit Log</button>
         <button class="btn btn-ghost admin-only" id="seedBtn" onclick="seedOpeningStock()">🌱 Seed Opening Stock</button>
         <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
+        <button class="btn btn-ghost" onclick="openThresholdPanel()">⚙ Thresholds</button>
         <div class="settings-wrapper">
             <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
             <div class="settings-dropdown" id="settingsDropdown">
@@ -529,7 +641,7 @@
     </div>
 </main>
 
-<div id="overlay" onclick="closeIssuePopup()"></div>
+<div id="overlay" onclick="closeIssuePopup(); closeThresholdPanel();"></div>
 
 <div id="issuePopup" class="popup">
     <h3>Issue Stock</h3>
@@ -590,6 +702,54 @@ document.addEventListener("click", e => {
     }
 });
 
+// ✅ Threshold logic — session only (no server save)
+let thresholds = {}; // { itemDesc: minQty }
+
+function openThresholdPanel() {
+    const list = document.getElementById("thresholdList");
+    list.innerHTML = allStockItems.map(item => `
+        <div class="threshold-item">
+            <div class="threshold-desc" title="${item.desc}">${item.desc}</div>
+            <input
+                class="threshold-input"
+                type="number" min="0" step="0.01"
+                value="${thresholds[item.desc] ?? 5}"
+                data-desc="${item.desc.replace(/"/g, '&quot;')}"
+                placeholder="5"
+            >
+        </div>
+    `).join("");
+    document.getElementById("thresholdPanel").classList.add("open");
+    document.getElementById("overlay").style.display = "block";
+}
+
+function closeThresholdPanel() {
+    document.getElementById("thresholdPanel").classList.remove("open");
+    document.getElementById("overlay").style.display = "none";
+}
+
+function applyThresholds() {
+    // ✅ Read all inputs and save to thresholds object
+    document.querySelectorAll(".threshold-input").forEach(input => {
+        const desc = input.getAttribute("data-desc");
+        const val  = parseFloat(input.value);
+        thresholds[desc] = isNaN(val) ? 5 : val;
+    });
+    closeThresholdPanel();
+    applyFilters(); // ✅ Re-render table with new thresholds
+}
+
+function resetThresholds() {
+    thresholds = {};
+    document.querySelectorAll(".threshold-input").forEach(input => {
+        input.value = 5;
+    });
+}
+
+function getThreshold(desc) {
+    return thresholds[desc] ?? 5; // default 5
+}
+
 async function logout() {
     try {
         await fetch(`${API}/logout`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
@@ -624,7 +784,8 @@ function applyFilters() {
     let filtered = allStockItems.filter(item => {
         const matchSearch = !search || item.desc.toLowerCase().includes(search);
         const closing     = item.closingQty;
-        const statusKey   = closing > 5 ? "ok" : closing > 0 ? "low" : "zero";
+        const threshold = getThreshold(item.desc);
+        const statusKey = closing > threshold ? "ok" : closing > 0 ? "low" : "zero"; 
         const matchStatus = !statusFilter || statusFilter === statusKey;
         return matchSearch && matchStatus;
     });
@@ -645,8 +806,9 @@ function renderTable(items) {
         const totalReceived = item.receipts.reduce((s, r) => s + r.qty, 0);
         const totalIssued   = item.issues.reduce((s, i) => s + i.qty, 0);
         const closing       = item.closingQty;
-        const statusKey     = closing > 5 ? "ok" : closing > 0 ? "low" : "zero";
-        const statusLabel   = closing > 5 ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
+        const threshold   = getThreshold(item.desc);
+        const statusKey   = closing > threshold ? "ok" : closing > 0 ? "low" : "zero";
+        const statusLabel = closing > threshold ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
         const canIssue      = (role === "admin" || role === "store_manager" || role === "warehouse_worker");
         const closingColor  = closing <= 0 ? "var(--red)" : closing <= 5 ? "var(--gold)" : "var(--green-dark)";
 
@@ -695,8 +857,8 @@ function renderTable(items) {
 
 function updateStats(items) {
     document.getElementById("statTotal").textContent   = items.length;
-    document.getElementById("statInStock").textContent = items.filter(i => i.closingQty > 5).length;
-    document.getElementById("statLow").textContent     = items.filter(i => i.closingQty > 0 && i.closingQty <= 5).length;
+    document.getElementById("statInStock").textContent = items.filter(i => i.closingQty > getThreshold(i.desc)).length;
+document.getElementById("statLow").textContent     = items.filter(i => i.closingQty > 0 && i.closingQty <= getThreshold(i.desc)).length;
     document.getElementById("statOut").textContent     = items.filter(i => i.closingQty <= 0).length;
 }
 
