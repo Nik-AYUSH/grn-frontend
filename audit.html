@@ -449,6 +449,9 @@
     <div class="header-right">
         <button class="btn btn-ghost" onclick="window.location.href='stock.html'">📦 Stock Register</button>
         <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
+        <button class="btn btn-ghost admin-only" onclick="cleanupOrphans()" style="color:var(--red);border-color:rgba(239,68,68,0.3);">
+       🧹 Clean Orphans
+<       /button>
         <div class="settings-wrapper">
             <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
             <div class="settings-dropdown" id="settingsDropdown">
@@ -835,6 +838,22 @@ async function confirmEdit() {
     }
 }
 
+async function cleanupOrphans() {
+    if (!confirm("This will remove audit entries that have no matching GRN item. Continue?")) return;
+    try {
+        const res  = await fetch(`${API}/auditLog/cleanup/orphans`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Cleanup Failed", data.error); return; }
+        showToast("success", "Cleanup Done", data.message);
+        loadAudit();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
+}
+
 function openDeletePopup(id, desc, type, qty) {
     pendingDeleteId = Number(id);
     document.getElementById("deleteDetail").innerHTML =
@@ -860,9 +879,10 @@ async function confirmDelete() {
         showToast(
             "success",
             "Entry Deleted",
-             data.grnItemDeleted
-                 ? "Audit entry and its linked GRN item were both removed."
-                : "Audit entry removed successfully.");
+            data.grnDeleted    ? "Audit entry and linked GRN item removed." :
+            data.issueDeleted  ? "Audit entry and linked stock issue removed." :
+                         "Audit entry removed."
+        );
         closeDeletePopup();
         // ✅ Force number comparison to fix type mismatch
         allEntries = allEntries.filter(e => Number(e.id) !== Number(pendingDeleteId));
