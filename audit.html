@@ -287,6 +287,8 @@
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
         td.timestamp { font-size: 12px; color: var(--text-light); white-space: nowrap; }
 
+
+
         .badge {
             display: inline-flex; align-items: center; gap: 5px;
             padding: 4px 10px; border-radius: 20px;
@@ -525,7 +527,7 @@
     </div>
 </main>
 
-<div id="overlay" onclick="closeDeletePopup()"></div>
+<div id="overlay" onclick="closeDeletePopup(); closeEditPopup();"></div>
 
 <div id="deletePopup" class="popup">
     <h3>⚠️ Delete Audit Entry</h3>
@@ -534,6 +536,50 @@
     <div class="btn-row">
         <button class="btn-cancel" onclick="closeDeletePopup()">Cancel</button>
         <button class="btn-confirm-delete" onclick="confirmDelete()">Delete Entry</button>
+    </div>
+</div>
+
+<div id="editPopup" class="popup" style="width:500px;">
+    <h3>✏️ Edit Audit Entry</h3>
+    <input type="hidden" id="editId">
+    <div style="display:grid; gap:14px;">
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Type</label>
+            <select id="editType" class="filter-input" style="width:100%;">
+                <option value="GRN">GRN Receipt</option>
+                <option value="Issue">Issue</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Item Description</label>
+            <input id="editItemDesc" class="filter-input" style="width:100%;" placeholder="Item description">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+                <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Quantity</label>
+                <input id="editQty" class="filter-input" type="number" min="0" step="0.01" style="width:100%;">
+            </div>
+            <div>
+                <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Rate (₹)</label>
+                <input id="editRate" class="filter-input" type="number" min="0" step="0.01" style="width:100%;">
+            </div>
+        </div>
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">GRN No</label>
+            <input id="editGrnNo" class="filter-input" style="width:100%;" placeholder="GRN number">
+        </div>
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Remark</label>
+            <input id="editRemark" class="filter-input" style="width:100%;" placeholder="Remark">
+        </div>
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Done By</label>
+            <input id="editDoneBy" class="filter-input" style="width:100%;" placeholder="Username">
+        </div>
+    </div>
+    <div class="btn-row" style="margin-top:24px;">
+        <button class="btn-cancel" onclick="closeEditPopup()">Cancel</button>
+        <button class="btn-confirm-delete" style="background:linear-gradient(135deg,var(--green),var(--green-dark));box-shadow:0 4px 14px rgba(76,175,80,0.3);" onclick="confirmEdit()">Save Changes</button>
     </div>
 </div>
 
@@ -558,8 +604,12 @@ function checkAuth() {
     const username = sessionStorage.getItem("username");
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
-    if (role === "admin") {
-        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "flex");
+
+    if (role === "admin" || role === "store_manager") {
+        document.querySelectorAll(".admin-only").forEach(el => {
+            // ✅ Use table-cell for th/td, flex for everything else
+            el.style.display = (el.tagName === "TH" || el.tagName === "TD") ? "table-cell" : "flex";
+        });
     }
 }
 
@@ -677,6 +727,15 @@ function renderPage() {
                     : "—"
                 }
             </td>
+            <td class="admin-only" style="display:flex;gap:6px;align-items:center;">
+                ${(role === "admin" || role === "store_manager") ? `
+            <button class="btn-delete" style="background:rgba(76,175,80,0.08);color:var(--green-dark);border-color:rgba(76,175,80,0.2);"
+            onclick="openEditPopup(${entry.id})">✏️ Edit</button>
+                ${role === "admin"
+            ? `<button class="btn-delete" onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc||'').replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
+            : ""}
+    ` : "—"}
+</td>
         </tr>`;
     }).join("");
 
@@ -721,6 +780,61 @@ function resetFilters() {
     ["filterItem", "filterType", "filterFrom", "filterTo", "filterUser"]
         .forEach(id => document.getElementById(id).value = "");
     applyFilters();
+}
+
+let pendingEditId = null;
+
+function openEditPopup(id) {
+    const entry = allEntries.find(e => e.id === id);
+    if (!entry) return;
+    pendingEditId = id;
+    document.getElementById("editId").value       = id;
+    document.getElementById("editType").value     = entry.type     || "GRN";
+    document.getElementById("editItemDesc").value = entry.itemDesc || "";
+    document.getElementById("editQty").value      = entry.qty      ?? "";
+    document.getElementById("editRate").value     = entry.rate     ?? "";
+    document.getElementById("editGrnNo").value    = entry.grnNo    || "";
+    document.getElementById("editRemark").value   = entry.remark   || "";
+    document.getElementById("editDoneBy").value   = entry.doneBy   || "";
+    document.getElementById("editPopup").style.display  = "block";
+    document.getElementById("overlay").style.display    = "block";
+}
+
+function closeEditPopup() {
+    pendingEditId = null;
+    document.getElementById("editPopup").style.display = "none";
+    document.getElementById("overlay").style.display   = "none";
+}
+
+async function confirmEdit() {
+    if (!pendingEditId) return;
+    const payload = {
+        type:     document.getElementById("editType").value,
+        itemDesc: document.getElementById("editItemDesc").value,
+        qty:      parseFloat(document.getElementById("editQty").value)  || 0,
+        rate:     parseFloat(document.getElementById("editRate").value) || 0,
+        grnNo:    document.getElementById("editGrnNo").value,
+        remark:   document.getElementById("editRemark").value,
+        doneBy:   document.getElementById("editDoneBy").value
+    };
+    try {
+        const res  = await fetch(`${API}/auditLog/${pendingEditId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Update Failed", data.error || "Could not update entry."); return; }
+        showToast("success", "Entry Updated", "Audit entry saved successfully.");
+        // ✅ Update in-memory entry so table reflects change without refetch
+        const idx = allEntries.findIndex(e => e.id === pendingEditId);
+        if (idx !== -1) allEntries[idx] = { ...allEntries[idx], ...payload };
+        closeEditPopup();
+        updateStats(allEntries);
+        applyFilters();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
 }
 
 function openDeletePopup(id, desc, type, qty) {

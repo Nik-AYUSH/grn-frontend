@@ -537,7 +537,7 @@
         <input class="form-input" id="issueDesc" readonly>
     </div>
     <div class="form-group">
-        <label class="form-label">Available Closing Stock</label>
+        <label class="form-label">Available Opening Stock </label>
         <input class="form-input" id="issueAvailable" readonly>
     </div>
     <div class="form-group">
@@ -657,7 +657,7 @@ function renderTable(items) {
             <td class="num">₹${fmt(item.weightedAvgRate)}</td>
             <td><span class="badge badge-${statusKey}">${statusLabel}</span></td>
             <td>${canIssue
-                ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${closing})">− Issue</button>`
+                ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.openingQty})">− Issue</button>`
                 : "—"}</td>
         </tr>`;
     }).join("");
