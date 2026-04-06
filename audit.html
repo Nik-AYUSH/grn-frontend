@@ -607,12 +607,10 @@ function checkAuth() {
 
     if (role === "admin" || role === "store_manager") {
         document.querySelectorAll(".admin-only").forEach(el => {
-            // ✅ Use table-cell for th/td, flex for everything else
             el.style.display = (el.tagName === "TH" || el.tagName === "TD") ? "table-cell" : "flex";
         });
     }
 }
-
 function toggleSettings() {
     document.getElementById("settingsDropdown").classList.toggle("open");
 }
@@ -838,7 +836,7 @@ async function confirmEdit() {
 }
 
 function openDeletePopup(id, desc, type, qty) {
-    pendingDeleteId = id;
+    pendingDeleteId = Number(id);
     document.getElementById("deleteDetail").innerHTML =
         `<strong>Item:</strong> ${desc}<br><strong>Type:</strong> ${type}<br><strong>Quantity:</strong> ${qty}`;
     document.getElementById("deletePopup").style.display = "block";
@@ -859,11 +857,18 @@ async function confirmDelete() {
         });
         const data = await res.json();
         if (!res.ok) { showToast("error", "Delete Failed", data.error || "Could not delete entry."); return; }
-        showToast("success", "Entry Deleted", "Audit entry removed successfully.");
+        showToast(
+            "success",
+            "Entry Deleted",
+             data.grnItemDeleted
+                 ? "Audit entry and its linked GRN item were both removed."
+                : "Audit entry removed successfully.");
         closeDeletePopup();
-        allEntries = allEntries.filter(e => e.id !== pendingDeleteId);
+        // ✅ Force number comparison to fix type mismatch
+        allEntries = allEntries.filter(e => Number(e.id) !== Number(pendingDeleteId));
         updateStats(allEntries);
         applyFilters();
+        pendingDeleteId = null;
     } catch (err) {
         showToast("error", "Error", "Could not connect to server.");
     }
