@@ -759,6 +759,9 @@ async function logout() {
 }
 
 async function loadStock() {
+    allStockItems = [];
+    document.getElementById("stockBody").innerHTML =
+        `<tr><td colspan="12" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
     const monthInput = document.getElementById("filterMonth").value;
     const url = monthInput ? `${API}/stockItems?month=${monthInput}` : `${API}/stockItems`;
     document.getElementById("stockBody").innerHTML =
