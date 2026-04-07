@@ -799,25 +799,33 @@ function applyFilters() {
 
 function renderTable(items) {
     const tbody = document.getElementById("stockBody");
-    if (!items.length) {
+    
+    // ✅ Filter out items with no activity for this month
+    const activeItems = items.filter(item => {
+        return item.openingQty > 0 ||
+               item.receipts.length > 0 ||
+               item.issues.length > 0 ||
+               item.closingQty > 0;
+    });
+
+    if (!activeItems.length) {
         tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><div>📦</div><p>No stock items found.</p></td></tr>`;
         return;
     }
 
     let html = "";
 
-    items.forEach((item, idx) => {
+    activeItems.forEach((item, idx) => {
         const totalReceived = item.receipts.reduce((s, r) => s + r.qty, 0);
         const totalIssued   = item.issues.reduce((s, i) => s + i.qty, 0);
         const closing       = item.closingQty;
-        const threshold   = getThreshold(item.desc);
-        const statusKey   = closing > threshold ? "ok" : closing > 0 ? "low" : "zero";
-        const statusLabel = closing > threshold ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
+        const threshold     = getThreshold(item.desc);
+        const statusKey     = closing > threshold ? "ok" : closing > 0 ? "low" : "zero";
+        const statusLabel   = closing > threshold ? "In Stock" : closing > 0 ? "Low Stock" : "Out of Stock";
         const canIssue      = (role === "admin" || role === "store_manager" || role === "warehouse_worker");
         const closingColor  = closing <= 0 ? "var(--red)" : closing <= 5 ? "var(--gold)" : "var(--green-dark)";
 
         const receipts = item.receipts;
-        // ✅ If no receipts, render single row with empty GRN rate
         const rowCount = Math.max(receipts.length, 1);
 
         for (let i = 0; i < rowCount; i++) {
@@ -826,7 +834,7 @@ function renderTable(items) {
             const isEven  = idx % 2 === 0;
             const rowBg   = isFirst
                 ? (isEven ? "" : "background:var(--green-pale2);")
-                : "background:rgba(201,168,76,0.04);"; // ✅ subtle tint for sub-rows
+                : "background:rgba(201,168,76,0.04);";
 
             html += `<tr style="${rowBg}">
                 <td>${isFirst ? idx + 1 : ""}</td>
