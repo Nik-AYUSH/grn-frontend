@@ -366,8 +366,8 @@
 <script>
 const API = "https://grn-backend-production.up.railway.app";
 
-const existingToken = sessionStorage.getItem("token");
-if (existingToken) redirectByRole(sessionStorage.getItem("role"));
+const existingToken = localStorage.getItem("token");
+if (existingToken) redirectByRole(localStorage.getItem("role"));
 
 function redirectByRole(role) {
     if (role === "admin" || role === "store_manager") window.location.href = "index.html";
@@ -419,11 +419,11 @@ async function login() {
             loginBtn.innerHTML = "Sign In";
             return;
         }
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("username", data.user.username);
-        sessionStorage.setItem("role", data.user.role);
-        sessionStorage.setItem("userId", data.user.id);
-        redirectByRole(data.user.role);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("userId", data.user.id);
+            redirectByRole(data.user.role);
     } catch (err) {
         errorMsg.textContent = "⚠ Could not connect to server. Please try again.";
         errorMsg.classList.add("show");

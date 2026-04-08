@@ -675,15 +675,15 @@
 
 <script>
 const API   = "https://grn-backend-production.up.railway.app";
-const token = sessionStorage.getItem("token");
-const role  = sessionStorage.getItem("role");
+const token = localStorage.getItem("token");
+const role  = localStorage.getItem("role");
 
 if (!token) window.location.href = "login.html";
 
 let allStockItems = [];
 
 function checkAuth() {
-    const username = sessionStorage.getItem("username");
+    const username = localStorage.getItem("username");
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
     if (role === "admin" || role === "store_manager") {
@@ -754,7 +754,7 @@ async function logout() {
     try {
         await fetch(`${API}/logout`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
     } catch(e) {}
-    sessionStorage.clear();
+    localStorage.clear();
     window.location.href = "login.html";
 }
 
