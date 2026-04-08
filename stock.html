@@ -909,6 +909,16 @@ async function confirmIssue() {
     const date   = document.getElementById("issueDate").value;
     const remark = document.getElementById("issueRemark").value;
     const avail  = parseFloat(document.getElementById("issueAvailable").value);
+    // ✅ Warn if issue date is in the past
+    const today = new Date().toISOString().split("T")[0];
+        if (date < today) {
+           const proceed = confirm(
+               `⚠️ You are issuing stock for a past date (${date}).\n\n` +
+               `This may affect stock calculations.\n\n` +
+               `Are you sure you want to continue?`
+            );
+    if (!proceed) return;
+}
 
     if (!qty || qty <= 0) { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
     if (!date)            { showToast("error", "Date Required",    "Please select an issue date.");   return; }
