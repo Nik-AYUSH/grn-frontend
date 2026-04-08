@@ -905,18 +905,30 @@ function closeIssuePopup() {
 }
 
 async function confirmIssue() {
-    const qty   = parseFloat(document.getElementById("issueQty").value);
-    const date  = document.getElementById("issueDate").value;
+    const qty    = parseFloat(document.getElementById("issueQty").value);
+    const date   = document.getElementById("issueDate").value;
     const remark = document.getElementById("issueRemark").value;
-    const avail = parseFloat(document.getElementById("issueAvailable").value);
+    const avail  = parseFloat(document.getElementById("issueAvailable").value);
+
     if (!qty || qty <= 0) { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
     if (!date)            { showToast("error", "Date Required",    "Please select an issue date.");   return; }
     if (qty > avail)      { showToast("error", "Insufficient Stock", `Only ${avail} units available.`); return; }
+
+    // ✅ Get the weighted avg rate for this item
+    const currentItem = allStockItems.find(i => i.desc === currentIssueDesc);
+    const weightedRate = currentItem ? currentItem.weightedAvgRate : 0;
+
     try {
         const res = await fetch(`${API}/issueStock`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify({ desc: currentIssueDesc, qty, date, remark })
+            body: JSON.stringify({ 
+                desc:   currentIssueDesc, 
+                qty, 
+                date, 
+                remark,
+                rate:   weightedRate  // ✅ pass weighted avg rate
+            })
         });
         const data = await res.json();
         if (!res.ok) { showToast("error", "Issue Failed", data.error || "Could not issue stock."); return; }
