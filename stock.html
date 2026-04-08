@@ -535,11 +535,11 @@
 <!-- Threshold Settings Panel -->
 <div id="thresholdPanel" class="threshold-panel">
     <div class="threshold-panel-header">
-        <div class="threshold-panel-title">Low Stock Thresholds</div>
+        <div class="threshold-panel-title">MOQ Settings</div>
         <button class="threshold-panel-close" onclick="closeThresholdPanel()">✕</button>
     </div>
     <div class="threshold-note">
-        Set the minimum quantity below which an item is marked as "Low Stock". Default is 5.
+        Set the Minimum Order Quantity (MOQ) per item. Items at or below this quantity will be marked as "Low Stock".
     </div>
     <div class="threshold-panel-body" id="thresholdList"></div>
     <div class="threshold-panel-footer">
@@ -561,7 +561,7 @@
         <button class="btn btn-ghost" onclick="window.location.href='audit.html'">📋 Audit Log</button>
         <button class="btn btn-ghost admin-only" id="seedBtn" onclick="seedOpeningStock()">🌱 Seed Opening Stock</button>
         <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
-        <button class="btn btn-ghost" onclick="openThresholdPanel()">⚙ Thresholds</button>
+        <button class="btn btn-ghost" onclick="openThresholdPanel()">📦 MOQ</button>
         <div class="settings-wrapper">
             <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
             <div class="settings-dropdown" id="settingsDropdown">
