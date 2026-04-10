@@ -627,9 +627,14 @@ document.addEventListener("click", e => {
 
 async function logout() {
     try {
-        await fetch(`${API}/logout`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
+        await fetch(`${API}/logout`, { 
+            method: "POST", 
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } 
+        });
     } catch(e) {}
+    localStorage.setItem("loggingOut", "true"); // ✅ set flag before clear
     localStorage.clear();
+    localStorage.setItem("loggingOut", "true"); // ✅ set again after clear
     window.location.href = "login.html";
 }
 
