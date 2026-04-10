@@ -367,7 +367,23 @@
 const API = "https://grn-backend-production.up.railway.app";
 
 const existingToken = localStorage.getItem("token");
-if (existingToken) redirectByRole(localStorage.getItem("role"));
+if (existingToken) {
+    // ✅ Verify token is still valid before redirecting
+    fetch(`${API}/me`, {
+        headers: { "Authorization": `Bearer ${existingToken}` }
+    })
+    .then(res => {
+        if (res.ok) {
+            redirectByRole(localStorage.getItem("role"));
+        } else {
+            // ✅ Token invalid — clear and stay on login page
+            localStorage.clear();
+        }
+    })
+    .catch(() => {
+        localStorage.clear();
+    });
+}
 
 function redirectByRole(role) {
     if (role === "admin" || role === "store_manager") window.location.href = "index.html";
