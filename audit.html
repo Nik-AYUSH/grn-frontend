@@ -613,6 +613,10 @@ function checkAuth() {
             el.style.display = (el.tagName === "TH" || el.tagName === "TD") ? "table-cell" : "flex";
         });
     }
+     if (role !== "admin") {
+        const cleanBtn = document.querySelector('[onclick="cleanupOrphans()"]');
+        if (cleanBtn) cleanBtn.style.display = "none";
+    }
 }
 function toggleSettings() {
     document.getElementById("settingsDropdown").classList.toggle("open");
