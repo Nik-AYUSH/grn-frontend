@@ -641,7 +641,7 @@
     </div>
 </main>
 
-<div id="overlay" onclick="closeIssuePopup(); closeThresholdPanel();"></div>
+<div id="overlay" onclick="closeIssuePopup(); closeDeleteStockPopup();"></div>
 
 <div id="issuePopup" class="popup">
     <h3>Issue Stock</h3>
@@ -668,6 +668,25 @@
     <div class="btn-row">
         <button class="btn-cancel" onclick="closeIssuePopup()">Cancel</button>
         <button class="btn-confirm" onclick="confirmIssue()">Issue Stock →</button>
+    </div>
+</div>
+<div id="deleteStockPopup" class="popup" style="width:440px;">
+    <h3>🗑 Delete Stock Item</h3>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px;">
+        This will delete all stock data for this item for the current month only. 
+        GRN entries and audit logs will not be affected.
+    </p>
+    <div class="form-group">
+        <label class="form-label">Item</label>
+        <input class="form-input" id="deleteStockDesc" readonly>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Month</label>
+        <input class="form-input" id="deleteStockMonth" readonly>
+    </div>
+    <div class="btn-row">
+        <button class="btn-cancel" onclick="closeDeleteStockPopup()">Cancel</button>
+        <button class="btn-confirm" onclick="confirmDeleteStock()">Delete →</button>
     </div>
 </div>
 
@@ -865,11 +884,61 @@ function renderTable(items) {
                     ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.closingQty})">− Issue</button>`
                     : ""
                 }</td>
+                <td>${isFirst && canIssue
+                   ? `<button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.closingQty})">− Issue</button>
+                   ${(role === 'admin' || role === 'store_manager') 
+                      ? `<button class="btn-issue" style="margin-top:4px;background:rgba(239,68,68,0.08);color:var(--red);border-color:rgba(239,68,68,0.2);" 
+                         onclick="openDeleteStockPopup('${item.desc.replace(/'/g,"\\'")}')">🗑 Delete</button>` 
+                    : ""}`
+                : ""
+            }</td>
             </tr>`;
         }
     });
 
     tbody.innerHTML = html;
+}
+
+let currentDeleteStockDesc = "";
+
+function openDeleteStockPopup(desc) {
+    currentDeleteStockDesc = desc;
+    const monthInput = document.getElementById("filterMonth").value;
+    const now        = new Date();
+    const month      = monthInput || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const monthNames = ["January","February","March","April","May","June",
+                        "July","August","September","October","November","December"];
+    const [yr, mo]   = month.split("-");
+    document.getElementById("deleteStockDesc").value  = desc;
+    document.getElementById("deleteStockMonth").value = `${monthNames[parseInt(mo) - 1]} ${yr}`;
+    document.getElementById("deleteStockPopup").style.display = "block";
+    document.getElementById("overlay").style.display          = "block";
+}
+
+function closeDeleteStockPopup() {
+    currentDeleteStockDesc = "";
+    document.getElementById("deleteStockPopup").style.display = "none";
+    document.getElementById("overlay").style.display          = "none";
+}
+
+async function confirmDeleteStock() {
+    if (!currentDeleteStockDesc) return;
+    const monthInput = document.getElementById("filterMonth").value;
+    const now        = new Date();
+    const month      = monthInput || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    try {
+        const res  = await fetch(`${API}/stockItems/${encodeURIComponent(currentDeleteStockDesc)}?month=${month}`, {
+            method:  "DELETE",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Delete Failed", data.error || "Could not delete item."); return; }
+        showToast("success", "Item Deleted", `Stock data for "${currentDeleteStockDesc}" removed for this month.`);
+        closeDeleteStockPopup();
+        loadStock();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
 }
 
 function updateStats(items) {
