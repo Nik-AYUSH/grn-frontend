@@ -562,6 +562,11 @@
         <button class="btn btn-ghost admin-only" id="seedBtn" onclick="seedOpeningStock()">🌱 Seed Opening Stock</button>
         <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
         <button class="btn btn-ghost" onclick="openThresholdPanel()">📦 MOQ</button>
+        <button class="btn btn-ghost admin-only" id="resetBtn" 
+            onclick="resetStock()" 
+            style="color:var(--red);border-color:rgba(239,68,68,0.3);">
+            🗑 Reset Stock
+        </button>
         <div class="settings-wrapper">
             <button class="btn-settings" onclick="toggleSettings()">⚙️</button>
             <div class="settings-dropdown" id="settingsDropdown">
@@ -942,6 +947,41 @@ async function confirmDeleteStock() {
         loadStock();
     } catch (err) {
         showToast("error", "Error", "Could not connect to server.");
+    }
+}
+
+async function resetStock() {
+    const confirmed = confirm(
+        "⚠️ WARNING: This will permanently delete ALL stock data for ALL items and ALL months.\n\n" +
+        "This cannot be undone.\n\n" +
+        "Are you absolutely sure?"
+    );
+    if (!confirmed) return;
+
+    // ✅ Double confirm for safety
+    const doubleConfirm = confirm(
+        "⚠️ FINAL WARNING\n\n" +
+        "You are about to wipe the entire stock register.\n\n" +
+        "Type OK to confirm."
+    );
+    if (!doubleConfirm) return;
+
+    const btn = document.getElementById("resetBtn");
+    btn.disabled = true; btn.innerHTML = "⏳ Resetting...";
+
+    try {
+        const res  = await fetch(`${API}/resetStock`, {
+            method:  "DELETE",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Reset Failed", data.error || "Could not reset stock."); return; }
+        showToast("success", "Stock Reset", "Stock register wiped. You can now seed fresh data.");
+        loadStock();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    } finally {
+        btn.disabled = false; btn.innerHTML = "🗑 Reset Stock";
     }
 }
 
