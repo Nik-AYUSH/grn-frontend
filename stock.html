@@ -721,6 +721,9 @@ function checkAuth() {
     }
     if (role !== "admin") {
         document.getElementById("seedBtn").style.display = "none";
+        if (role === "admin") {
+    document.getElementById("uploadExcelBtn").style.display = "flex";
+}
     }
 }
 function openUploadExcel() {
