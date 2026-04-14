@@ -599,12 +599,12 @@
 
 <script>
 const API      = "https://grn-backend-production.up.railway.app";
-const token    = localStorage.getItem("token");
-const role     = localStorage.getItem("role");
+if (!localStorage.getItem("token")) window.location.href = "login.html";
+if (localStorage.getItem("role") !== "admin") window.location.href = "index.html";
+
 const myUserId = Number(localStorage.getItem("userId"));
 
-if (!token) window.location.href = "login.html";
-if (role !== "admin") window.location.href = "index.html";
+
 
 let allUsers        = [];
 let pendingDeleteId = null;
