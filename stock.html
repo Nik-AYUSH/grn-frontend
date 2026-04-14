@@ -865,6 +865,8 @@ function applyFilters() {
         const matchStatus = !statusFilter || statusFilter === statusKey;
         return matchSearch && matchStatus;
     });
+    console.log("Filtered count:", filtered.length);
+    filtered.forEach((item, idx) => console.log(idx+1, item.desc));
     renderTable(filtered);
     updateStats(allStockItems);
 }
