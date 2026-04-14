@@ -427,10 +427,10 @@ async function login() {
             loginBtn.innerHTML = "Sign In";
             return;
         }
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("username", data.user.username);
-        sessionStorage.setItem("role", data.user.role);
-        sessionStorage.setItem("userId", data.user.id);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("userId", data.user.id);
             redirectByRole(data.user.role);
     } catch (err) {
         errorMsg.textContent = "⚠ Could not connect to server. Please try again.";
