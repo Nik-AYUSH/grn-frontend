@@ -546,7 +546,7 @@
 const API = "https://grn-backend-production.up.railway.app";
 
 // ✅ Immediate auth check
-const _token = sessionStorage.getItem("token");
+const _token = localStorage.getItem("token");
 if (!_token) window.location.href = "login.html";
 
 let selectedDate = null;
@@ -555,8 +555,8 @@ let currentGRNId = null;
 let calendar = null;
 
 document.addEventListener('DOMContentLoaded', function () {
-    const username = sessionStorage.getItem("username");
-    const role     = sessionStorage.getItem("role");
+    const username = localStorage.getItem("username");
+    const role     = localStorage.getItem("role");
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent = role ? role.replace(/_/g, " ") : "";
     if (role === "admin") document.getElementById("adminLink").style.display = "flex";
@@ -608,11 +608,11 @@ document.addEventListener("click", (e) => {
 });
 
 async function logout() {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     try {
         await fetch(`${API}/logout`, { method: "POST", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } });
     } catch(e) {}
-    sessionStorage.clear();
+    localStorage.clear();
     window.location.href = "login.html";
 }
 
