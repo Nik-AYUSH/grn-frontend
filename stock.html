@@ -873,12 +873,7 @@ function renderTable(items) {
     const tbody = document.getElementById("stockBody");
     
     // ✅ Filter out items with no activity for this month
-    const activeItems = items.filter(item => {
-        return item.openingQty > 0 ||
-               item.receipts.length > 0 ||
-               item.issues.length > 0 ||
-               item.closingQty > 0;
-    });
+    const activeItems = items;
 
     if (!activeItems.length) {
         tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><div>📦</div><p>No stock items found.</p></td></tr>`;
