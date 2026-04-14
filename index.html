@@ -423,6 +423,40 @@
         }
 
         .toast-title { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
+        /* Item description autocomplete */
+        .autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .autocomplete-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border: 1.5px solid rgba(76,175,80,0.3);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 99999;
+            box-shadow: 0 8px 24px rgba(56,142,60,0.15);
+            margin-top: 4px;
+        }
+
+        .autocomplete-item {
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--text-dark);
+            cursor: pointer;
+            border-bottom: 1px solid rgba(76,175,80,0.1);
+            transition: background 0.15s ease;
+            }
+
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover { background: var(--green-pale); color: var(--green-dark); }
+        .autocomplete-item mark { background: rgba(76,175,80,0.2); color: var(--green-dark); border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -507,7 +541,15 @@
         </tr>
         <tr>
             <td><input id="po" placeholder="PO-001"></td>
-            <td><input id="desc" placeholder="Must match stock register exactly"></td>
+            <td>
+    <div class="autocomplete-wrapper">
+        <input id="desc" placeholder="Start typing item name..." 
+               autocomplete="off"
+               oninput="handleDescInput(this.value)"
+               onblur="hideDescSuggestions()">
+        <div class="autocomplete-list" id="descSuggestions"></div>
+    </div>
+</td>
             <td>
                 <select id="qtySelect" onchange="toggleQuantityFields(this)">
                     <option value="">Select</option>
@@ -595,6 +637,65 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 });
 
+// ✅ Stock items cache for autocomplete
+let stockItemsCache = [];
+
+// ✅ Load stock items once for autocomplete
+async function loadStockItemsForAutocomplete() {
+    try {
+        const res  = await fetch(`${API}/stockItems`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        stockItemsCache = (data.items || []).map(i => i.desc);
+    } catch (err) {
+        console.error("Failed to load stock items for autocomplete:", err);
+    }
+}
+
+function handleDescInput(value) {
+    const list = document.getElementById("descSuggestions");
+    const query = value.toLowerCase().trim();
+
+    if (!query || query.length < 2) {
+        list.style.display = "none";
+        return;
+    }
+
+    const matches = stockItemsCache.filter(desc =>
+        desc.toLowerCase().includes(query)
+    );
+
+    if (!matches.length) {
+        list.style.display = "none";
+        return;
+    }
+
+    // ✅ Highlight matching text
+    list.innerHTML = matches.slice(0, 10).map(desc => {
+        const regex   = new RegExp(`(${query})`, "gi");
+        const highlighted = desc.replace(regex, "<mark>$1</mark>");
+        return `<div class="autocomplete-item" 
+            onmousedown="selectDescSuggestion('${desc.replace(/'/g, "\\'")}')"
+        >${highlighted}</div>`;
+    }).join("");
+
+    list.style.display = "block";
+}
+
+function selectDescSuggestion(desc) {
+    document.getElementById("desc").value = desc;
+    document.getElementById("descSuggestions").style.display = "none";
+}
+
+function hideDescSuggestions() {
+    // ✅ Small delay so onmousedown fires before blur hides the list
+    setTimeout(() => {
+        const list = document.getElementById("descSuggestions");
+        if (list) list.style.display = "none";
+    }, 150);
+}
+
 function toggleSettings() {
     document.getElementById("settingsDropdown").classList.toggle("open");
 }
@@ -667,11 +768,13 @@ function clearGRNForm() {
 
 function openItemPopupNew() {
     clearItemForm();
+    loadStockItemsForAutocomplete(); // ✅ load suggestions
     document.getElementById("itemPopup").style.display = "block";
     showOverlay();
 }
 
 function openItemPopupEdit(grnId) {
+    loadStockItemsForAutocomplete();
     fetch(`${API}/entries`)
         .then(res => res.json())
         .then(data => {
