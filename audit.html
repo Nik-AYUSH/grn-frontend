@@ -646,7 +646,7 @@ async function loadAudit() {
     document.getElementById("auditBody").innerHTML =
         `<tr><td colspan="9" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
     try {
-        const res  = await fetch(`${API}/auditLog`, { headers: { "Authorization": `Bearer ${token}` } });
+        const res  = await fetch(`${API}/auditLog`, { headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } });
         const data = await res.json();
         allEntries = Array.isArray(data) ? data : [];
         updateStats(allEntries);
@@ -830,7 +830,7 @@ async function confirmEdit() {
     try {
         const res  = await fetch(`${API}/auditLog/${pendingEditId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
             body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -852,7 +852,7 @@ async function cleanupOrphans() {
     try {
         const res  = await fetch(`${API}/auditLog/cleanup/orphans`, {
             method: "DELETE",
-            headers: { "Authorization": `Bearer ${token}` }
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
         if (!res.ok) { showToast("error", "Cleanup Failed", data.error); return; }
@@ -881,7 +881,7 @@ async function confirmDelete() {
     if (!pendingDeleteId) return;
     try {
         const res  = await fetch(`${API}/auditLog/${pendingDeleteId}`, {
-            method: "DELETE", headers: { "Authorization": `Bearer ${token}` }
+            method: "DELETE", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
         if (!res.ok) { showToast("error", "Delete Failed", data.error || "Could not delete entry."); return; }

@@ -694,10 +694,9 @@
 
 <script>
 const API   = "https://grn-backend-production.up.railway.app";
-const token = localStorage.getItem("token");
-const role  = localStorage.getItem("role");
+const role = localStorage.getItem("role");
 
-if (!token) window.location.href = "login.html";
+if (!localStorage.getItem("token")) window.location.href = "login.html";
 
 let allStockItems = [];
 
@@ -1010,7 +1009,7 @@ async function confirmIssue() {
     try {
         const res = await fetch(`${API}/issueStock`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
             body: JSON.stringify({ 
                 desc:   currentIssueDesc, 
                 qty, 
@@ -1035,7 +1034,7 @@ async function seedOpeningStock() {
     btn.disabled = true; btn.innerHTML = "⏳ Seeding...";
     try {
         const res  = await fetch(`${API}/seedOpeningStock`, {
-            method: "POST", headers: { "Authorization": `Bearer ${token}` }
+            method: "POST", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
         if (!res.ok) showToast("error", "Seed Failed", data.error || "Could not seed stock.");
