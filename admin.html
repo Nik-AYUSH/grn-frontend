@@ -611,6 +611,7 @@ let pendingDeleteId = null;
 
 function checkAuth() {
     const username = localStorage.getItem("username");
+    const role     = localStorage.getItem("role"); // ✅ read fresh here
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
 }
