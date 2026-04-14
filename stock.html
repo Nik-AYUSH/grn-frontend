@@ -990,19 +990,23 @@ async function confirmDeleteStock() {
 
 async function resetStock() {
     const confirmed = confirm(
-        "⚠️ WARNING: This will permanently delete ALL stock data for ALL items and ALL months.\n\n" +
+        "⚠️ WARNING: This will permanently delete:\n\n" +
+        "• All stock data\n" +
+        "• All GRN entries\n" +
+        "• All audit logs\n\n" +
         "This cannot be undone.\n\n" +
         "Are you absolutely sure?"
     );
     if (!confirmed) return;
 
-    // ✅ Double confirm for safety
+    
     const doubleConfirm = confirm(
         "⚠️ FINAL WARNING\n\n" +
-        "You are about to wipe the entire stock register.\n\n" +
-        "Type OK to confirm."
+        "You are about to wipe ALL data.\n\n" +
+        "Click OK to confirm."
     );
     if (!doubleConfirm) return;
+    // ... rest of existing code
 
     const btn = document.getElementById("resetBtn");
     btn.disabled = true; btn.innerHTML = "⏳ Resetting...";
