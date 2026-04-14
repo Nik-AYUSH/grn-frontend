@@ -365,15 +365,23 @@
 
 <script>
 const API = "https://grn-backend-production.up.railway.app";
-localStorage.removeItem("loggingOut");
-// ✅ Clear the loggingOut flag
-localStorage.removeItem("loggingOut");
+
 
 function redirectByRole(role) {
-    if (role === "admin" || role === "store_manager") window.location.href = "index.html";
-    else if (role === "warehouse_worker") window.location.href = "warehouse.html";
-    else window.location.href = "index.html";
+    if (role === "admin" || role === "store_manager") window.location.replace("index.html");
+    else if (role === "warehouse_worker") window.location.replace("warehouse.html");
+    else window.location.replace("index.html");
 }
+
+// ✅ Only auto-redirect if token exists AND we're not logging out
+document.addEventListener("DOMContentLoaded", () => {
+    localStorage.removeItem("loggingOut");
+    const existingToken = localStorage.getItem("token");
+    const existingRole  = localStorage.getItem("role");
+    if (existingToken && existingRole) {
+        redirectByRole(existingRole);
+    }
+});
 
 function switchTab(tab) {
     document.querySelectorAll(".tab-btn").forEach((btn, i) => {
