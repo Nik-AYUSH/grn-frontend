@@ -562,6 +562,12 @@
         <button class="btn btn-ghost admin-only" id="seedBtn" onclick="seedOpeningStock()">🌱 Seed Opening Stock</button>
         <button class="btn btn-green" onclick="window.location.href='index.html'">← GRN Register</button>
         <button class="btn btn-ghost" onclick="openThresholdPanel()">📦 MOQ</button>
+        <button class="btn btn-ghost admin-only" onclick="openUploadExcel()" 
+            style="color:var(--green-dark);">
+            📤 Upload Stock Excel
+        </button>
+<input type="file" id="excelUploadInput" accept=".xlsx" style="display:none" 
+    onchange="uploadStockExcel(this)">
         <button class="btn btn-ghost admin-only" id="resetBtn" 
             onclick="resetStock()" 
             style="color:var(--red);border-color:rgba(239,68,68,0.3);">
@@ -715,6 +721,38 @@ function checkAuth() {
     }
     if (role !== "admin") {
         document.getElementById("seedBtn").style.display = "none";
+    }
+}
+function openUploadExcel() {
+    document.getElementById("excelUploadInput").click();
+}
+
+async function uploadStockExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith(".xlsx")) {
+        showToast("error", "Invalid File", "Please upload a .xlsx file only.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    showToast("success", "Uploading...", "Please wait while the file uploads.");
+
+    try {
+        const res  = await fetch(`${API}/uploadStockExcel`, {
+            method:  "POST",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+            body:    formData
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Upload Failed", data.error || "Could not upload file."); return; }
+        showToast("success", "Upload Successful", "Stock Excel uploaded. You can now seed opening stock.");
+        // ✅ Reset input so same file can be uploaded again if needed
+        input.value = "";
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
     }
 }
 
