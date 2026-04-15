@@ -1181,6 +1181,7 @@ async function confirmEditStock() {
     const monthInput = document.getElementById("filterMonth").value;
     const now        = new Date();
     const month      = monthInput || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    console.log("Month:", month);
 
     if (isNaN(qty) || qty < 0)   { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
     if (isNaN(rate) || rate < 0) { showToast("error", "Invalid Rate",     "Please enter a valid rate.");     return; }
