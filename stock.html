@@ -652,7 +652,7 @@
     </div>
 </main>
 
-<div id="overlay" onclick="closeIssuePopup(); closeDeleteStockPopup();"></div>
+<div id="overlay" onclick="closeIssuePopup(); closeDeleteStockPopup(); closeEditStockPopup();"></div>
 
 <div id="issuePopup" class="popup">
     <h3>Issue Stock</h3>
@@ -698,6 +698,27 @@
     <div class="btn-row">
         <button class="btn-cancel" onclick="closeDeleteStockPopup()">Cancel</button>
         <button class="btn-confirm" onclick="confirmDeleteStock()">Delete →</button>
+    </div>
+</div>
+<div id="editStockPopup" class="popup" style="width:480px;">
+    <h3>✏️ Edit Opening Stock</h3>
+    <input type="hidden" id="editStockDesc">
+    <div class="form-group">
+        <label class="form-label">Item Description</label>
+        <input class="form-input" id="editStockDescDisplay" readonly>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Opening Quantity</label>
+        <input class="form-input" type="number" id="editStockQty" min="0" step="0.01" placeholder="Enter opening quantity">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Opening Rate (₹)</label>
+        <input class="form-input" type="number" id="editStockRate" min="0" step="0.01" placeholder="Enter opening rate">
+    </div>
+    <div class="btn-row">
+        <button class="btn-cancel" onclick="closeEditStockPopup()">Cancel</button>
+        <button class="btn-confirm" style="background:linear-gradient(135deg,var(--green-dark),var(--green));box-shadow:0 4px 14px rgba(76,175,80,0.3);" 
+            onclick="confirmEditStock()">Save Changes →</button>
     </div>
 </div>
 
@@ -933,8 +954,10 @@ function renderTable(items) {
                     ? `<div style="display:flex;flex-direction:column;gap:6px;">
                         <button class="btn-issue" onclick="openIssuePopup('${item.desc.replace(/'/g,"\\'")}', ${item.closingQty})">− Issue</button>
                         ${(role === 'admin' || role === 'store_manager')
-                            ? `<button class="btn-issue" style="background:rgba(239,68,68,0.08);color:var(--red);border-color:rgba(239,68,68,0.2);" 
-                            onclick="openDeleteStockPopup('${item.desc.replace(/'/g,"\\'")}')">🗑 Delete</button>`
+                            ? `<button class="btn-issue" style="background:rgba(76,175,80,0.08);color:var(--green-dark);border-color:rgba(76,175,80,0.2);"
+                               onclick="openEditStockPopup('${item.desc.replace(/'/g,"\\'")}', ${item.openingQty}, ${item.openingRate})">✏️ Edit</button>
+                               <button class="btn-issue" style="background:rgba(239,68,68,0.08);color:var(--red);border-color:rgba(239,68,68,0.2);" 
+                               onclick="openDeleteStockPopup('${item.desc.replace(/'/g,"\\'")}')">🗑 Delete</button>`
                             : ""}
                         </div>`
                     : ""
@@ -1137,6 +1160,49 @@ function showToast(type, title, message) {
 }
 
 document.addEventListener("DOMContentLoaded", () => { checkAuth(); loadStock(); });
+function openEditStockPopup(desc, openingQty, openingRate) {
+    document.getElementById("editStockDesc").value        = desc;
+    document.getElementById("editStockDescDisplay").value = desc;
+    document.getElementById("editStockQty").value         = openingQty || 0;
+    document.getElementById("editStockRate").value        = openingRate || 0;
+    document.getElementById("editStockPopup").style.display = "block";
+    document.getElementById("overlay").style.display       = "block";
+}
+
+function closeEditStockPopup() {
+    document.getElementById("editStockPopup").style.display = "none";
+    document.getElementById("overlay").style.display        = "none";
+}
+
+async function confirmEditStock() {
+    const desc = document.getElementById("editStockDesc").value;
+    const qty  = parseFloat(document.getElementById("editStockQty").value);
+    const rate = parseFloat(document.getElementById("editStockRate").value);
+    const monthInput = document.getElementById("filterMonth").value;
+    const now        = new Date();
+    const month      = monthInput || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    if (isNaN(qty) || qty < 0)   { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
+    if (isNaN(rate) || rate < 0) { showToast("error", "Invalid Rate",     "Please enter a valid rate.");     return; }
+
+    try {
+        const res  = await fetch(`${API}/stockItems/${encodeURIComponent(desc)}/opening?month=${month}`, {
+            method:  "PUT",
+            headers: { 
+                "Content-Type": "application/json", 
+                "Authorization": `Bearer ${localStorage.getItem("token")}` 
+            },
+            body: JSON.stringify({ openingQty: qty, openingRate: rate })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast("error", "Update Failed", data.error || "Could not update opening stock."); return; }
+        showToast("success", "Opening Stock Updated", `"${desc}" updated successfully.`);
+        closeEditStockPopup();
+        loadStock();
+    } catch (err) {
+        showToast("error", "Error", "Could not connect to server.");
+    }
+}
 </script>
 </body>
 </html>
