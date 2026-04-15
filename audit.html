@@ -608,15 +608,18 @@ function checkAuth() {
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
 
-    if (role === "admin" || role === "store_manager") {
-        document.querySelectorAll(".admin-only").forEach(el => {
+    if (role === "admin") {
+    document.querySelectorAll(".admin-only").forEach(el => {
+        el.style.display = (el.tagName === "TH" || el.tagName === "TD") ? "table-cell" : "flex";
+    });
+        } else if (role === "store_manager") {
+        // ✅ Show action column (edit button) but hide clean orphans
+            document.querySelectorAll(".admin-only").forEach(el => {
             el.style.display = (el.tagName === "TH" || el.tagName === "TD") ? "table-cell" : "flex";
-        });
-    }
-     if (role !== "admin") {
-        const cleanBtn = document.querySelector('[onclick="cleanupOrphans()"]');
-        if (cleanBtn) cleanBtn.style.display = "none";
-    }
+    });
+    const cleanBtn = document.querySelector('[onclick="cleanupOrphans()"]');
+    if (cleanBtn) cleanBtn.style.display = "none";
+}
 }
 function toggleSettings() {
     document.getElementById("settingsDropdown").classList.toggle("open");

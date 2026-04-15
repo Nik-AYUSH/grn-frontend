@@ -735,18 +735,20 @@ let allStockItems = [];
 function checkAuth() {
     const username = localStorage.getItem("username");
     document.getElementById("dropdownUsername").textContent = username || "User";
-    document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
-    // ✅ Fixed — seedBtn only for admin, other admin-only buttons for both
-    if (role === "admin" || role === "store_manager") {
+    document.getElementById("dropdownRole").textContent     = role ? role.replace(/_/g, " ") : "";
+
+    if (role === "admin") {
+        // ✅ Admin sees all buttons
         document.querySelectorAll(".admin-only").forEach(el => el.style.display = "flex");
+    } else if (role === "store_manager") {
+        // ✅ Store manager sees nothing from admin-only group
+        document.getElementById("seedBtn").style.display        = "none";
+        document.getElementById("resetBtn").style.display       = "none";
+        document.getElementById("uploadExcelBtn").style.display = "none";
     }
-    if (role !== "admin") {
-        document.getElementById("seedBtn").style.display = "none";
-        if (role === "admin") {
-    document.getElementById("uploadExcelBtn").style.display = "flex";
+    
 }
-    }
-}
+
 function openUploadExcel() {
     document.getElementById("excelUploadInput").click();
 }
