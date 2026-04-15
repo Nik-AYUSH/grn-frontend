@@ -704,8 +704,13 @@
     <h3>✏️ Edit Opening Stock</h3>
     <input type="hidden" id="editStockDesc">
     <div class="form-group">
-        <label class="form-label">Item Description</label>
-        <input class="form-input" id="editStockDescDisplay" readonly>
+        <label class="form-label">Item Description (Current)</label>
+        <input class="form-input" id="editStockDescDisplay" readonly 
+            style="color:var(--text-light);font-size:12px;">
+    </div>
+    <div class="form-group">
+        <label class="form-label">New Item Name <span style="color:var(--text-light);font-weight:400;">(leave blank to keep current)</span></label>
+        <input class="form-input" id="editStockNewDesc" placeholder="Enter new item name...">
     </div>
     <div class="form-group">
         <label class="form-label">Opening Quantity</label>
@@ -746,7 +751,7 @@ function checkAuth() {
         document.getElementById("resetBtn").style.display       = "none";
         document.getElementById("uploadExcelBtn").style.display = "none";
     }
-    
+
 }
 
 function openUploadExcel() {
@@ -1165,7 +1170,8 @@ document.addEventListener("DOMContentLoaded", () => { checkAuth(); loadStock(); 
 function openEditStockPopup(desc, openingQty, openingRate) {
     document.getElementById("editStockDesc").value        = desc;
     document.getElementById("editStockDescDisplay").value = desc;
-    document.getElementById("editStockQty").value         = openingQty || 0;
+    document.getElementById("editStockNewDesc").value     = "";  // ✅ always blank on open
+    document.getElementById("editStockQty").value         = openingQty  || 0;
     document.getElementById("editStockRate").value        = openingRate || 0;
     document.getElementById("editStockPopup").style.display = "block";
     document.getElementById("overlay").style.display       = "block";
@@ -1177,15 +1183,15 @@ function closeEditStockPopup() {
 }
 
 async function confirmEditStock() {
-    const desc = document.getElementById("editStockDesc").value;
-    const qty  = parseFloat(document.getElementById("editStockQty").value);
-    const rate = parseFloat(document.getElementById("editStockRate").value);
+    const desc    = document.getElementById("editStockDesc").value;
+    const newDesc = document.getElementById("editStockNewDesc").value.trim();
+    const qty     = parseFloat(document.getElementById("editStockQty").value);
+    const rate    = parseFloat(document.getElementById("editStockRate").value);
     const monthInput = document.getElementById("filterMonth").value;
     const now        = new Date();
     const month      = monthInput || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    console.log("Month:", month);
 
-    if (isNaN(qty) || qty < 0)   { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
+    if (isNaN(qty)  || qty  < 0) { showToast("error", "Invalid Quantity", "Please enter a valid quantity."); return; }
     if (isNaN(rate) || rate < 0) { showToast("error", "Invalid Rate",     "Please enter a valid rate.");     return; }
 
     try {
@@ -1195,11 +1201,15 @@ async function confirmEditStock() {
                 "Content-Type": "application/json", 
                 "Authorization": `Bearer ${localStorage.getItem("token")}` 
             },
-            body: JSON.stringify({ openingQty: qty, openingRate: rate })
+            body: JSON.stringify({ 
+                openingQty:  qty, 
+                openingRate: rate,
+                newDesc:     newDesc || null  // ✅ send new name or null if unchanged
+            })
         });
         const data = await res.json();
         if (!res.ok) { showToast("error", "Update Failed", data.error || "Could not update opening stock."); return; }
-        showToast("success", "Opening Stock Updated", `"${desc}" updated successfully.`);
+        showToast("success", "Stock Updated", `"${newDesc || desc}" updated successfully.`);
         closeEditStockPopup();
         loadStock();
     } catch (err) {
