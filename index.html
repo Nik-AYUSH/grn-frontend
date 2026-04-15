@@ -569,8 +569,9 @@
                     <div><label>Rate</label><input class="rate" type="number" min="0" placeholder="0.00" oninput="calculate()"></div>
                     <div><label>Amount</label><input class="amount" type="number" readonly placeholder="Auto"></div>
                     <div><label>Tax (%)</label><input class="tax" type="number" min="0" placeholder="0" oninput="calculate()"></div>
+                    <div><label>GST Amt</label><input class="gstAmt" type="number" readonly placeholder="Auto"></div>
                     <div><label>Total</label><input class="total" type="number" readonly placeholder="Auto"></div>
-                </div>
+
             </td>
             <td><select id="status"><option>OK</option><option>Rejected</option></select></td>
             <td><input id="location" placeholder="e.g. Rack A"></td>
@@ -720,14 +721,18 @@ async function logout() {
 function showOverlay() { document.getElementById("overlay").style.display = "block"; }
 
 function calculate() {
-    const unit   = parseFloat(document.querySelector(".unit")?.value)  || 0;
-    const rate   = parseFloat(document.querySelector(".rate")?.value)  || 0;
-    const tax    = parseFloat(document.querySelector(".tax")?.value)   || 0;
-    const amount = unit * rate;
-    const total  = amount + (amount * tax / 100);
+    const unit    = parseFloat(document.querySelector(".unit")?.value)  || 0;
+    const rate    = parseFloat(document.querySelector(".rate")?.value)  || 0;
+    const tax     = parseFloat(document.querySelector(".tax")?.value)   || 0;
+    const amount  = unit * rate;
+    const gstAmt  = amount * tax / 100;
+    const total   = amount + gstAmt;
+
     const af = document.querySelector(".amount");
+    const gf = document.querySelector(".gstAmt");
     const tf = document.querySelector(".total");
     if (af) af.value = amount.toFixed(2);
+    if (gf) gf.value = gstAmt.toFixed(2);
     if (tf) tf.value = total.toFixed(2);
 }
 
@@ -745,8 +750,9 @@ function showStockToast(stockResult) {
     const toast = document.getElementById("stockToast");
     if (stockResult.updated) {
         toast.className = "toast-success";
+        const title = stockResult.newItem ? "✅ New Item Added to Stock" : "✅ Stock Register Updated";
         toast.innerHTML = `
-            <div class="toast-title">✅ Stock Register Updated</div>
+            <div class="toast-title">${title}</div>
             <div>Item: <strong>${stockResult.matchedItem}</strong></div>
             <div>Sheet: ${stockResult.sheetName}</div>
             <div>${stockResult.previousQty} → ${stockResult.newQty} (+${stockResult.addedQty})</div>
@@ -810,6 +816,7 @@ function populateItemForm(item) {
         document.querySelector(".unit").value   = item.unit   || "";
         document.querySelector(".rate").value   = item.rate   || "";
         document.querySelector(".tax").value    = item.tax    || "";
+        document.querySelector(".gstAmt").value = item.gstAmt || "";
         document.querySelector(".amount").value = item.amount || "";
         document.querySelector(".total").value  = item.total  || "";
     } else {
@@ -874,19 +881,20 @@ function deleteData() {
 function saveItem() {
     if (!currentGRNId) { alert("No GRN selected. Please save a GRN first."); return; }
     const itemId = document.getElementById("currentItemId").value;
-    let itemData = {
-        po:       document.getElementById("po").value,
-        desc:     document.getElementById("desc").value,
-        uom:      document.querySelector(".uom")?.value    || "",
-        unit:     document.querySelector(".unit")?.value   || "",
-        rate:     document.querySelector(".rate")?.value   || "",
-        amount:   document.querySelector(".amount")?.value || "",
-        tax:      document.querySelector(".tax")?.value    || "",
-        total:    document.querySelector(".total")?.value  || "",
-        status:   document.getElementById("status").value,
-        location: document.getElementById("location").value,
-        remark:   document.getElementById("remark").value
-    };
+   let itemData = {
+    po:       document.getElementById("po").value,
+    desc:     document.getElementById("desc").value,
+    uom:      document.querySelector(".uom")?.value    || "",
+    unit:     document.querySelector(".unit")?.value   || "",
+    rate:     document.querySelector(".rate")?.value   || "",
+    amount:   document.querySelector(".amount")?.value || "",
+    tax:      document.querySelector(".tax")?.value    || "",
+    gstAmt:   document.querySelector(".gstAmt")?.value || "",   // ✅ new
+    total:    document.querySelector(".total")?.value  || "",
+    status:   document.getElementById("status").value,
+    location: document.getElementById("location").value,
+    remark:   document.getElementById("remark").value
+};
 
     if (itemId) {
         fetch(`${API}/updateItem/${itemId}`, {
@@ -934,7 +942,7 @@ function clearItemForm() {
     ["po", "desc", "location", "remark", "currentItemId"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("qtySelect").value = "";
     document.querySelector(".qtyBox").style.display = "none";
-    [".unit", ".rate", ".amount", ".tax", ".total"].forEach(cls => { const el = document.querySelector(cls); if (el) el.value = ""; });
+    [".unit", ".rate", ".amount", ".tax",".gstAmt", ".total"].forEach(cls => { const el = document.querySelector(cls); if (el) el.value = ""; });
     const uom = document.querySelector(".uom");
     if (uom) uom.selectedIndex = 0;
     document.getElementById("status").selectedIndex = 0;
