@@ -892,11 +892,12 @@ function saveItem() {
     rate:     document.querySelector(".rate")?.value   || "",
     amount:   document.querySelector(".amount")?.value || "",
     tax:      document.querySelector(".tax")?.value    || "",
-    gstAmt:   document.querySelector(".gstAmt")?.value || "",   // ✅ new
+    gstAmt:   document.querySelector(".gstAmt")?.value || "",   
     total:    document.querySelector(".total")?.value  || "",
     status:   document.getElementById("status").value,
     location: document.getElementById("location").value,
-    remark:   document.getElementById("remark").value
+    remark:   document.getElementById("remark").value,
+    savedBy:  localStorage.getItem("username") || "unknown"
 };
 
     if (itemId) {

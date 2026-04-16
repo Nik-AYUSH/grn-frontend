@@ -518,7 +518,7 @@
                         <th onclick="sortBy('grnNo')"      id="th-grnNo">GRN No ↕</th>
                         <th>Remark</th>
                         <th onclick="sortBy('doneBy')"     id="th-doneBy">Done By ↕</th>
-                        <th class="admin-only">Action</th>
+                        
                     </tr>
                 </thead>
                 <tbody id="auditBody">
@@ -734,21 +734,19 @@ function renderPage() {
                 ${entry.remark || "—"}
             </td>
             <td>${entry.doneBy || "—"}</td>
-            <td class="admin-only">
-                ${isAdmin
-                    ? `<button class="btn-delete" onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc || "").replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
-                    : "—"
-                }
-            </td>
+
             <td class="admin-only" style="display:flex;gap:6px;align-items:center;">
-                ${(role === "admin" || role === "store_manager") ? `
-            <button class="btn-delete" style="background:rgba(76,175,80,0.08);color:var(--green-dark);border-color:rgba(76,175,80,0.2);"
-            onclick="openEditPopup(${entry.id})">✏️ Edit</button>
+                ${(role === "admin" || role === "store_manager")
+                    ? `<button class="btn-delete" 
+                        style="background:rgba(76,175,80,0.08);color:var(--green-dark);border-color:rgba(76,175,80,0.2);"
+                        onclick="openEditPopup(${entry.id})">✏️ Edit</button>`
+                    : ""}
                 ${role === "admin"
-            ? `<button class="btn-delete" onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc||'').replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
-            : ""}
-    ` : "—"}
-</td>
+                    ? `<button class="btn-delete" 
+                        onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc||"").replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
+                    : ""}
+                ${(role !== "admin" && role !== "store_manager") ? "—" : ""}
+            </td>
         </tr>`;
     }).join("");
 
