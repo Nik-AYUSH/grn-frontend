@@ -578,6 +578,10 @@
         <div>
             <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Done By</label>
             <input id="editDoneBy" class="filter-input" style="width:100%;" placeholder="Username">
+        <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Date</label>
+            <input id="editDate" class="filter-input" type="date" style="width:100%;">
+        </div>
         </div>
     </div>
     <div class="btn-row" style="margin-top:24px;">
@@ -807,6 +811,7 @@ function openEditPopup(id) {
     document.getElementById("editGrnNo").value    = entry.grnNo    || "";
     document.getElementById("editRemark").value   = entry.remark   || "";
     document.getElementById("editDoneBy").value   = entry.doneBy   || "";
+    document.getElementById("editDate").value     = entry.timestamp ? new Date(entry.timestamp).toISOString().split("T")[0] : "";
     document.getElementById("editPopup").style.display  = "block";
     document.getElementById("overlay").style.display    = "block";
 }
@@ -820,14 +825,15 @@ function closeEditPopup() {
 async function confirmEdit() {
     if (!pendingEditId) return;
     const payload = {
-        type:     document.getElementById("editType").value,
-        itemDesc: document.getElementById("editItemDesc").value,
-        qty:      parseFloat(document.getElementById("editQty").value)  || 0,
-        rate:     parseFloat(document.getElementById("editRate").value) || 0,
-        grnNo:    document.getElementById("editGrnNo").value,
-        remark:   document.getElementById("editRemark").value,
-        doneBy:   document.getElementById("editDoneBy").value
-    };
+        type:      document.getElementById("editType").value,
+        itemDesc:  document.getElementById("editItemDesc").value,
+        qty:       parseFloat(document.getElementById("editQty").value)  || 0,
+        rate:      parseFloat(document.getElementById("editRate").value) || 0,
+        grnNo:     document.getElementById("editGrnNo").value,
+        remark:    document.getElementById("editRemark").value,
+        doneBy:    document.getElementById("editDoneBy").value,
+        timestamp: document.getElementById("editDate").value ? new Date(document.getElementById("editDate").value).toISOString() : undefined  // ✅ add this
+};
     try {
         const res  = await fetch(`${API}/auditLog/${pendingEditId}`, {
             method: "PUT",
