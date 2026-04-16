@@ -742,17 +742,21 @@ function checkAuth() {
     document.getElementById("dropdownUsername").textContent = username || "User";
     document.getElementById("dropdownRole").textContent     = role ? role.replace(/_/g, " ") : "";
 
-    if (role === "admin") {
-        // ✅ Admin sees all buttons
+    if (role === "admin" || role === "store_manager") {
+        // Show all admin-only elements for both roles first
         document.querySelectorAll(".admin-only").forEach(el => el.style.display = "flex");
-    } else if (role === "store_manager") {
-        // ✅ Store manager sees nothing from admin-only group
-        document.getElementById("seedBtn").style.display        = "none";
-        document.getElementById("resetBtn").style.display       = "none";
-        document.getElementById("uploadExcelBtn").style.display = "none";
     }
 
+    // Then hide admin-only buttons from store_manager
+    if (role !== "admin") {
+        document.getElementById("seedBtn").style.display  = "none";
+        document.getElementById("resetBtn").style.display = "none";
+        // Upload Excel button has no id — target by onclick attribute
+        const uploadBtn = document.querySelector('[onclick="openUploadExcel()"]');
+        if (uploadBtn) uploadBtn.style.display = "none";
+    }
 }
+
 
 function openUploadExcel() {
     document.getElementById("excelUploadInput").click();
