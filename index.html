@@ -708,48 +708,49 @@ document.addEventListener('DOMContentLoaded', function () {
         initialView: 'dayGridMonth',
         eventOrder:  "order,start",
         events: async function (fetchInfo, successCallback, failureCallback) {
-            try {
-                // ✅ Fetch GRN entries and stock items in parallel
-                const [grnRes, stockRes] = await Promise.all([
-                    fetch(`${API}/entries`),
-                    fetch(`${API}/stockItems`, {
-                        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-                    })
-            ]);
+    try {
+        // ✅ Get the month range visible in the calendar
+        const start = fetchInfo.startStr.substring(0, 7); // YYYY-MM
+        const end   = fetchInfo.endStr.substring(0, 7);   // YYYY-MM
 
-            const grnData   = await grnRes.json();
-            const stockData = await stockRes.json();
+        // ✅ Fetch GRN entries and audit log in parallel
+        // Use audit log for issues since it has all months
+        const [grnRes, auditRes] = await Promise.all([
+            fetch(`${API}/entries`),
+            fetch(`${API}/auditLog`, {
+                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+            })
+        ]);
 
-            // ✅ GRN events — green (default)
-            const grnEvents = grnData.map(e => ({
-                id:              String(e.id),
-                title:           [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
-                date:            e.date,
-                backgroundColor: "#388E3C",
-                borderColor:     "#2E7D32",
+        const grnData   = await grnRes.json();
+        const auditData = await auditRes.json();
+
+        // ✅ GRN events — green
+        const grnEvents = grnData.map(e => ({
+            id:              String(e.id),
+            title:           [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
+            date:            e.date,
+            backgroundColor: "#388E3C",
+            borderColor:     "#2E7D32",
+            textColor:       "#ffffff",
+            order:           1
+        }));
+
+        // ✅ Issue events from audit log — red
+        const issueEvents = auditData
+            .filter(a => a.type === "Issue" && a.timestamp)
+            .map(a => ({
+                id:              `issue-${a.id}`,
+                title:           `📤 ${a.itemDesc} (−${a.qty})`,
+                date:            a.timestamp.split("T")[0],
+                backgroundColor: "#ef4444",
+                borderColor:     "#dc2626",
                 textColor:       "#ffffff",
-                order:           1
+                order:           99,
+                extendedProps:   { isIssue: true }
             }));
 
-            // ✅ Issue events — red
-            const issueEvents = [];
-                for (const item of (stockData.items || [])) {
-                for (const issue of (item.issues || [])) {
-                    if (!issue.date) continue;
-                        issueEvents.push({
-                            id:               `issue-${item.desc}-${issue.id}`,
-                            title:            `📤 ${item.desc} (−${issue.qty} ${item.uom || ""})`,
-                            date:             issue.date.split("T")[0],
-                            backgroundColor:  "#ef4444",
-                            borderColor:      "#dc2626",
-                            textColor:        "#ffffff",
-                            order:            99,
-                            extendedProps:    { isIssue: true }
-                        });
-                    }
-                }
-
-            successCallback([...grnEvents, ...issueEvents]);
+        successCallback([...grnEvents, ...issueEvents]);
 
     } catch (err) {
         console.error("Fetch error:", err);
