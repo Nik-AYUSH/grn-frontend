@@ -589,8 +589,14 @@ thead th {
             <option value="GRN">GRN Receipt</option>
             <option value="Issue">Issue</option>
         </select>
-        <input class="filter-input" type="date" id="filterFrom" onchange="applyFilters()">
-        <input class="filter-input" type="date" id="filterTo"   onchange="applyFilters()">
+        <div style="display:flex;flex-direction:column;gap:3px;">
+            <label style="font-size:10px;font-weight:600;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;">From Date</label>
+            <input class="filter-input" type="date" id="filterFrom" onchange="applyFilters()">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+            <label style="font-size:10px;font-weight:600;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;">To Date</label>
+            <input class="filter-input" type="date" id="filterTo" onchange="applyFilters()">
+        </div>
         <input class="filter-input" id="filterUser" placeholder="👤 Search user..." oninput="applyFilters()">
         <button class="btn btn-ghost" onclick="resetFilters()">✕ Clear</button>
     </div>
