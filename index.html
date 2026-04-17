@@ -476,6 +476,9 @@
         <button class="btn-stock" onclick="downloadStock()">
             📦 Download Stock
         </button>
+        <button class="btn-stock" onclick="downloadIssues()">
+            📤 Download Issues
+        </button>
         <button class="btn-download" onclick="downloadExcel()">
             ⬇ Download GRN
         </button>
@@ -960,6 +963,55 @@ function closePopup() {
 function closeItemPopup() {
     document.getElementById("itemPopup").style.display = "none";
     document.getElementById("overlay").style.display = "none";
+}
+
+async function downloadIssues() {
+    const date  = calendar.getDate();
+    const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+
+    try {
+        const res  = await fetch(`${API}/stockItems?month=${month}`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        const items = data.items || [];
+
+        // ✅ Build CSV rows
+        const rows = [["Item Description", "UOM", "Issue Date", "Qty Issued", "Issued By", "Remark"]];
+
+        for (const item of items) {
+            if (!item.issues || item.issues.length === 0) continue;
+            for (const issue of item.issues) {
+                rows.push([
+                    item.desc,
+                    item.uom  || "",
+                    issue.date ? new Date(issue.date).toLocaleDateString("en-IN") : "",
+                    issue.qty  || 0,
+                    issue.issuedBy || "",
+                    issue.remark   || ""
+                ]);
+            }
+        }
+
+        if (rows.length === 1) {
+            alert("No issues found for " + month);
+            return;
+        }
+
+        // ✅ Convert to CSV and download
+        const csv      = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+        const blob     = new Blob([csv], { type: "text/csv" });
+        const url      = URL.createObjectURL(blob);
+        const a        = document.createElement("a");
+        a.href         = url;
+        a.download     = `Issues_${month}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error("Download issues error:", err);
+        alert("Failed to download issues.");
+    }
 }
 </script>
 </body>
