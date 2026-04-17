@@ -706,18 +706,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'dayGridMonth',
-        events: function (fetchInfo, successCallback, failureCallback) {
-            fetch(`${API}/entries`)
-                .then(res => { if (!res.ok) throw new Error("Failed"); return res.json(); })
-                .then(data => {
-                    successCallback(data.map(e => ({
-                        id: String(e.id),
-                        title: [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
-                        date: e.date
-                    })));
-                })
-                .catch(err => { console.error("Fetch error:", err); failureCallback(err); });
-        },
+        events: async function (fetchInfo, successCallback, failureCallback) {
+            try {
+                // ✅ Fetch GRN entries and stock items in parallel
+                const [grnRes, stockRes] = await Promise.all([
+                    fetch(`${API}/entries`),
+                    fetch(`${API}/stockItems`, {
+                        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+                    })
+            ]);
+
+            const grnData   = await grnRes.json();
+            const stockData = await stockRes.json();
+
+            // ✅ GRN events — green (default)
+            const grnEvents = grnData.map(e => ({
+                id:    String(e.id),
+                title: [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
+                date:  e.date,
+                color: "#388E3C"
+            }));
+
+            // ✅ Issue events — red
+            const issueEvents = [];
+                for (const item of (stockData.items || [])) {
+                for (const issue of (item.issues || [])) {
+                    if (!issue.date) continue;
+                        issueEvents.push({
+                        id:               `issue-${item.desc}-${issue.id}`,
+                        title:            `📤 ${item.desc} (−${issue.qty} ${item.uom || ""})`,
+                        date:             issue.date.split("T")[0],
+                        color:            "#ef4444",
+                        textColor:        "#ffffff",
+                        extendedProps:    { isIssue: true }
+                    });
+                }
+            }
+
+            successCallback([...grnEvents, ...issueEvents]);
+
+    } catch (err) {
+        console.error("Fetch error:", err);
+        failureCallback(err);
+    }
+},
         dateClick: function (info) {
             selectedDate = info.dateStr;
             selectedEvent = null;
@@ -727,13 +759,16 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById("formPopup").style.display = "block";
         },
         eventClick: function (info) {
+            // ✅ Don't open GRN popup for issue events
+            if (info.event.extendedProps.isIssue) return;
+
             selectedEvent = info.event;
-            selectedDate = info.event.startStr;
-            let values = (info.event.title || "").split(" | ");
+            selectedDate  = info.event.startStr;
+            let values    = (info.event.title || "").split(" | ");
             for (let i = 1; i <= 6; i++) document.getElementById("c" + i).value = values[i-1] || "";
             showOverlay();
             document.getElementById("formPopup").style.display = "block";
-        }
+        },
     });
     calendar.render();
 });
