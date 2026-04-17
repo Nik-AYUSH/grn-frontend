@@ -706,6 +706,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'dayGridMonth',
+        eventOrder:  "order,start",
         events: async function (fetchInfo, successCallback, failureCallback) {
             try {
                 // ✅ Fetch GRN entries and stock items in parallel
@@ -721,10 +722,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // ✅ GRN events — green (default)
             const grnEvents = grnData.map(e => ({
-                id:    String(e.id),
-                title: [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
-                date:  e.date,
-                color: "#388E3C"
+                id:              String(e.id),
+                title:           [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
+                date:            e.date,
+                backgroundColor: "#388E3C",
+                borderColor:     "#2E7D32",
+                textColor:       "#ffffff",
+                order:           1
             }));
 
             // ✅ Issue events — red
@@ -733,15 +737,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 for (const issue of (item.issues || [])) {
                     if (!issue.date) continue;
                         issueEvents.push({
-                        id:               `issue-${item.desc}-${issue.id}`,
-                        title:            `📤 ${item.desc} (−${issue.qty} ${item.uom || ""})`,
-                        date:             issue.date.split("T")[0],
-                        color:            "#ef4444",
-                        textColor:        "#ffffff",
-                        extendedProps:    { isIssue: true }
-                    });
+                            id:               `issue-${item.desc}-${issue.id}`,
+                            title:            `📤 ${item.desc} (−${issue.qty} ${item.uom || ""})`,
+                            date:             issue.date.split("T")[0],
+                            backgroundColor:  "#ef4444",
+                            borderColor:      "#dc2626",
+                            textColor:        "#ffffff",
+                            order:            99,
+                            extendedProps:    { isIssue: true }
+                        });
+                    }
                 }
-            }
 
             successCallback([...grnEvents, ...issueEvents]);
 
