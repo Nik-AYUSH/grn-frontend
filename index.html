@@ -27,12 +27,19 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         /* ✅ Global readability improvements */
-body {
-    font-size: 14px;
-    font-weight: 450;
-    letter-spacing: 0.1px;
-    -webkit-font-smoothing: antialiased;
-}
+
+ body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--off-white);
+            color: var(--text-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 14px;
+            font-weight: 400;        /* was 450 — fixes issue #9 too */
+            letter-spacing: 0.1px;
+            -webkit-font-smoothing: antialiased;
+        }        
+
 
 /* Table cells bolder */
 tbody td {
@@ -189,13 +196,7 @@ thead th {
     font-size: 19px;
 }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--off-white);
-            color: var(--text-dark);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+       
 
         body::before {
             content: '';
@@ -698,9 +699,9 @@ thead th {
     <div id="aiChatBox" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
         <div id="aiChatHistory" style="max-height:200px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;"></div>
         <div style="display:flex; gap:8px;">
-            <input id="aiChatInput" 
-                class="popup input" 
-                placeholder="Ask about your GRN data... e.g. which supplier is cheapest for cement?" 
+            <input id="aiChatInput" placeholder="Ask about your GRN data..."
+                style="flex:1; background:var(--off-white); border:1.5px solid rgba(76,175,80,0.2); border-radius:7px; padding:8px 12px; font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"
+                onkeydown="if(event.key==='Enter') askAI()">
                 style="flex:1; background:var(--off-white); border:1.5px solid rgba(76,175,80,0.2); border-radius:7px; padding:8px 12px; font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"
                 onkeydown="if(event.key==='Enter') askAI()">
             <button class="btn btn-primary" onclick="askAI()" id="askBtn">Ask →</button>
@@ -778,7 +779,7 @@ thead th {
                     <div><label>Tax (%)</label><input class="tax" type="number" min="0" placeholder="0" oninput="calculate()"></div>
                     <div><label>GST Amt</label><input class="gstAmt" type="number" readonly placeholder="Auto"></div>
                     <div><label>Total</label><input class="total" type="number" readonly placeholder="Auto"></div>
-
+                </div>
             </td>
             <td><select id="status"><option>OK</option><option>Rejected</option></select></td>
             <td><input id="location" placeholder="e.g. Rack A"></td>
@@ -991,8 +992,27 @@ function downloadExcel() {
     window.location.href = `${API}/download?month=${month}`;
 }
 
-function downloadStock() {
-    window.location.href = `${API}/downloadStock`;
+async function downloadStock() {
+    const date  = calendar.getDate();
+    const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+
+    try {
+        const res = await fetch(`${API}/downloadStock?month=${month}`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (!res.ok) throw new Error("Download failed");
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href     = url;
+        a.download = `Stock_Register_${month}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Download stock error:", err);
+        alert("Failed to download stock register.");
+    }
 }
 
 function showStockToast(stockResult) {
@@ -1088,7 +1108,9 @@ function saveData() {
     if (!selectedEvent) {
         fetch(`${API}/addEntry`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+                       "Authorization": `Bearer ${localStorage.getItem("token")}`
+             },
             body: JSON.stringify(payload)
         })
         .then(res => { if (!res.ok) throw new Error("Add failed: " + res.status); return res.json(); })
@@ -1103,7 +1125,9 @@ function saveData() {
     } else {
         fetch(`${API}/updateEntry`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+                       "Authorization": `Bearer ${localStorage.getItem("token")}`
+             },
             body: JSON.stringify({ id: Number(selectedEvent.id), updated: payload })
         })
         .then(res => { if (!res.ok) throw new Error("Update failed: " + res.status); return res.json(); })
@@ -1121,7 +1145,11 @@ function saveData() {
 function deleteData() {
     if (!selectedEvent) { alert("Please click on an existing entry first."); return; }
     if (!confirm("⚠️ This will permanently delete the GRN entry and all its items.\n\nContinue?")) return;
-    fetch(`${API}/deleteEntry/${selectedEvent.id}`, { method: "DELETE" })
+    fetch(`${API}/deleteEntry/${selectedEvent.id}`, { method: "DELETE",
+                                                      headers: {
+                                                          "Authorization": `Bearer ${localStorage.getItem("token")}` 
+                                                      }
+     })
     .then(res => { if (!res.ok) throw new Error("Delete failed: " + res.status); return res.json(); })
     .then(() => { closePopup(); calendar.refetchEvents(); alert("GRN Deleted!"); })
     .catch(err => { console.error("Delete Error:", err); alert("Delete failed."); });
@@ -1515,9 +1543,10 @@ async function askAI() {
 
     // ✅ Add user bubble
     const chatHistory = document.getElementById("aiChatHistory");
-    chatHistory.innerHTML += `
-        <div class="chat-bubble user">${question}</div>
-    `;
+    const userBubble = document.createElement("div");
+    userBubble.className   = "chat-bubble user";
+    userBubble.textContent = question;
+    chatHistory.appendChild(userBubble);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     // ✅ Add to conversation history for context
@@ -1545,18 +1574,19 @@ async function askAI() {
     aiChatHistory.push({ role: "assistant", content: answer });
 
     // ✅ Add AI bubble
-    chatHistory.innerHTML += `
-        <div class="chat-bubble ai">${answer}</div>
-    `;
+    const aiBubble = document.createElement("div");
+    aiBubble.className   = "chat-bubble ai";
+    aiBubble.textContent = answer;
+    chatHistory.appendChild(aiBubble);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
 } catch (err) {
     console.error("Chat error:", err);
-    chatHistory.innerHTML += `
-        <div class="chat-bubble ai" style="color:#ef4444;">
-            Failed to get response. Please try again.
-        </div>
-    `;
+    const errBubble = document.createElement("div");
+    errBubble.className = "chat-bubble ai";
+    errBubble.style.color = "#ef4444";
+    errBubble.textContent = "Failed to get response. Please try again.";
+    chatHistory.appendChild(errBubble);
 } finally {
         btn.disabled    = false;
         btn.textContent = "Ask →";
