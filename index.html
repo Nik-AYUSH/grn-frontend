@@ -222,6 +222,24 @@ thead th {
     width: 100%;
 }
 
+.chart-container canvas {
+    max-height: 400px !important;
+    width: 100% !important;
+}
+
+.chat-bubble {
+    max-width: 95%;
+}
+
+.chat-bubble.ai {
+    width: 95%;
+}
+
+#aiChatHistory .chart-container {
+    width: 100%;
+    max-width: 100%;
+}
+
 /* Table title */
 .table-title {
     font-weight: 800;
@@ -714,22 +732,22 @@ thead th {
 <div id="overlay"></div>
 <div id="stockToast"></div>
 
-<div id="aiPopup" class="popup" style="width:700px; max-width:95vw; max-height:85vh; overflow-y:auto;">
+<div id="aiPopup" class="popup" style="width:92vw; max-width:1200px; height:90vh; max-height:90vh; overflow-y:auto;">
     <h3>AI Insights</h3>
     <div id="aiContent" style="font-size:13px; color:var(--text-mid); line-height:1.8;">
         <div id="aiLoading" style="text-align:center; padding:40px; display:none;">
             <div style="font-size:24px; margin-bottom:12px;">🤖</div>
             <div>Analyzing your GRN data...</div>
         </div>
-        <div id="aiResults" style="display:none;"></div>
+        <div id="aiResults" style="display:none; min-height:200px;"></div>
         <div id="aiEmpty" style="text-align:center; padding:40px; display:none;">
             <div style="font-size:24px; margin-bottom:12px;">📦</div>
             <div>No GRN data found for analysis.</div>
         </div>
     </div>
 
-    <div id="aiChatBox" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
-        <div id="aiChatHistory" style="max-height:200px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;"></div>
+    <div id="aiChatBox" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:16px; position:sticky; bottom:0; background:var(--white); padding-bottom:8px;">
+        <div id="aiChatHistory" style="max-height:380px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;"></div>
         <div style="display:flex; gap:8px;">
             <input id="aiChatInput" placeholder="Ask about your GRN data..."
                 style="flex:1; background:var(--off-white); border:1.5px solid rgba(76,175,80,0.2); border-radius:7px; padding:8px 12px; font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"
