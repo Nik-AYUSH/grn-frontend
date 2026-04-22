@@ -1533,7 +1533,10 @@ async function askAI() {
     const input   = document.getElementById("aiChatInput");
     const question = input.value.trim();
     if (!question) return;
-
+    if (!aiDataSummary) {
+        alert("Please wait for AI Insights to finish loading first.");
+        return;
+    }
     const btn = document.getElementById("askBtn");
     btn.disabled    = true;
     btn.textContent = "...";
@@ -1567,6 +1570,8 @@ async function askAI() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed");
     const answer = data.answer;
+
+    if (!answer) throw new Error("Empty response from AI");
 
     // ✅ Add AI response to history
     aiChatHistory.push({ role: "assistant", content: answer });
