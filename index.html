@@ -1537,7 +1537,10 @@ try {
             Failed to get response. Please try again.
         </div>
     `;
-} 
+} finally {
+        btn.disabled    = false;
+        btn.textContent = "Ask →";
+    }
 
 
 </script>
