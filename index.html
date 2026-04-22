@@ -1612,7 +1612,8 @@ async function askAI() {
         aiBubble.className = "chat-bubble ai";
 
         // ✅ Check if response contains a chart config
-        const chartMatch = answer.match(/```chart\n([\s\S]*?)\n```/);
+        // After — catches ```chart, ```json, or just ``` followed by a { 
+        const chartMatch = answer.match(/```(?:chart|json)?\n?\s*(\{[\s\S]*?\})\s*\n?```/);     
         const tableMatch = answer.match(/```html\n([\s\S]*?)\n```/);
 
         if (chartMatch) {
