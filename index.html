@@ -6,6 +6,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <style>
         :root {
@@ -188,6 +189,37 @@ thead th {
     color: var(--text-mid);
     align-self: flex-start;
     border-bottom-left-radius: 3px;
+}
+
+.chat-bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    font-size: 12px;
+}
+.chat-bubble th {
+    background: #E8F5E9;
+    color: #388E3C;
+    padding: 7px 10px;
+    border: 1px solid #c8e6c9;
+    text-align: left;
+    font-weight: 600;
+}
+.chat-bubble td {
+    padding: 7px 10px;
+    border: 1px solid #c8e6c9;
+    color: var(--text-dark);
+}
+.chat-bubble tr:nth-child(even) td {
+    background: #f9fafb;
+}
+.chart-container {
+    background: white;
+    border: 1px solid rgba(76,175,80,0.2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 8px;
+    width: 100%;
 }
 
 /* Table title */
@@ -1530,67 +1562,136 @@ function renderInsights(insights) {
 }
 
 async function askAI() {
-    const input   = document.getElementById("aiChatInput");
+    const input    = document.getElementById("aiChatInput");
     const question = input.value.trim();
     if (!question) return;
+
     if (!aiDataSummary) {
         alert("Please wait for AI Insights to finish loading first.");
         return;
     }
+
     const btn = document.getElementById("askBtn");
     btn.disabled    = true;
     btn.textContent = "...";
     input.value     = "";
 
-    // ✅ Add user bubble
     const chatHistory = document.getElementById("aiChatHistory");
+
     const userBubble = document.createElement("div");
     userBubble.className   = "chat-bubble user";
     userBubble.textContent = question;
     chatHistory.appendChild(userBubble);
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    chatHistory.scrollTop  = chatHistory.scrollHeight;
 
-    // ✅ Add to conversation history for context
     aiChatHistory.push({ role: "user", content: question });
 
     try {
-    const res    = await fetch(`${API}/aiInsights`, {
-        method:  "POST",
-        headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({
-            summary:  aiDataSummary,
-            messages: aiChatHistory,
-            isChat:   true
-        })
-    });
+        const res  = await fetch(`${API}/aiInsights`, {
+            method:  "POST",
+            headers: {
+                "Content-Type":  "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                summary:  aiDataSummary,
+                messages: aiChatHistory,
+                isChat:   true
+            })
+        });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed");
-    const answer = data.answer;
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
 
-    if (!answer) throw new Error("Empty response from AI");
+        const answer = data.answer;
+        if (!answer) throw new Error("Empty response from AI");
 
-    // ✅ Add AI response to history
-    aiChatHistory.push({ role: "assistant", content: answer });
+        aiChatHistory.push({ role: "assistant", content: answer });
 
-    // ✅ Add AI bubble
-    const aiBubble = document.createElement("div");
-    aiBubble.className   = "chat-bubble ai";
-    aiBubble.textContent = answer;
-    chatHistory.appendChild(aiBubble);
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+        const aiBubble = document.createElement("div");
+        aiBubble.className = "chat-bubble ai";
 
-} catch (err) {
-    console.error("Chat error:", err);
-    const errBubble = document.createElement("div");
-    errBubble.className = "chat-bubble ai";
-    errBubble.style.color = "#ef4444";
-    errBubble.textContent = "Failed to get response. Please try again.";
-    chatHistory.appendChild(errBubble);
-} finally {
+        // ✅ Check if response contains a chart config
+        const chartMatch = answer.match(/```chart\n([\s\S]*?)\n```/);
+        const tableMatch = answer.match(/```html\n([\s\S]*?)\n```/);
+
+        if (chartMatch) {
+            // ✅ Parse and render Chart.js config
+            try {
+                const config = JSON.parse(chartMatch[1]);
+
+                // Extract plain text before/after the chart block
+                const plainText = answer.replace(/```chart\n[\s\S]*?\n```/, "").trim();
+                if (plainText) {
+                    aiBubble.textContent = plainText;
+                    chatHistory.appendChild(aiBubble);
+                }
+
+                // Create chart container
+                const chartDiv = document.createElement("div");
+                chartDiv.className = "chat-bubble ai chart-container";
+                const canvas = document.createElement("canvas");
+                canvas.style.maxHeight = "280px";
+                chartDiv.appendChild(canvas);
+                chatHistory.appendChild(chartDiv);
+
+                // Apply green color palette if not specified
+                if (config.data && config.data.datasets) {
+                    const greenPalette = [
+                        "#388E3C","#4CAF50","#66BB6A","#A5D6A7",
+                        "#1B5E20","#81C784","#2E7D32","#C8E6C9"
+                    ];
+                    config.data.datasets.forEach((ds, i) => {
+                        if (!ds.backgroundColor) {
+                            ds.backgroundColor = config.type === "line"
+                                ? "rgba(76,175,80,0.15)"
+                                : greenPalette[i % greenPalette.length];
+                        }
+                        if (!ds.borderColor) {
+                            ds.borderColor = greenPalette[i % greenPalette.length];
+                        }
+                    });
+                }
+
+                // Default options for clean look
+                config.options = config.options || {};
+                config.options.responsive = true;
+                config.options.plugins    = config.options.plugins || {};
+                config.options.plugins.legend = config.options.plugins.legend || { position: "bottom" };
+
+                new Chart(canvas, config);
+
+            } catch (parseErr) {
+                console.error("Chart parse error:", parseErr);
+                aiBubble.textContent = answer.replace(/```chart\n[\s\S]*?\n```/, "").trim();
+                chatHistory.appendChild(aiBubble);
+            }
+
+        } else if (tableMatch) {
+            // ✅ Render HTML table safely
+            const safe = tableMatch[1]
+                .replace(/<script[\s\S]*?<\/script>/gi, "")
+                .replace(/on\w+="[^"]*"/gi, "")
+                .replace(/javascript:/gi, "");
+            aiBubble.innerHTML = safe;
+            chatHistory.appendChild(aiBubble);
+
+        } else {
+            // ✅ Plain text — safe render
+            aiBubble.textContent = answer;
+            chatHistory.appendChild(aiBubble);
+        }
+
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    } catch (err) {
+        console.error("Chat error:", err);
+        const errBubble = document.createElement("div");
+        errBubble.className   = "chat-bubble ai";
+        errBubble.style.color = "#ef4444";
+        errBubble.textContent = "Failed to get response. Please try again.";
+        chatHistory.appendChild(errBubble);
+    } finally {
         btn.disabled    = false;
         btn.textContent = "Ask →";
     }
