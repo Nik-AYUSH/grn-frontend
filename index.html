@@ -1503,7 +1503,27 @@ function renderInsights(insights) {
     container.innerHTML = html;
 }
 
-try {
+async function askAI() {
+    const input   = document.getElementById("aiChatInput");
+    const question = input.value.trim();
+    if (!question) return;
+
+    const btn = document.getElementById("askBtn");
+    btn.disabled    = true;
+    btn.textContent = "...";
+    input.value     = "";
+
+    // ✅ Add user bubble
+    const chatHistory = document.getElementById("aiChatHistory");
+    chatHistory.innerHTML += `
+        <div class="chat-bubble user">${question}</div>
+    `;
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // ✅ Add to conversation history for context
+    aiChatHistory.push({ role: "user", content: question });
+
+    try {
     const res    = await fetch(`${API}/aiInsights`, {
         method:  "POST",
         headers: {
@@ -1537,8 +1557,11 @@ try {
             Failed to get response. Please try again.
         </div>
     `;
-} 
-
+} finally {
+        btn.disabled    = false;
+        btn.textContent = "Ask →";
+    }
+}
 
 </script>
 </body>
