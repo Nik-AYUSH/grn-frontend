@@ -699,8 +699,7 @@ thead th {
     <div id="aiChatBox" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
         <div id="aiChatHistory" style="max-height:200px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;"></div>
         <div style="display:flex; gap:8px;">
-            <input id="aiChatInput" 
-                placeholder="Ask about your GRN data... e.g. which supplier is cheapest for cement?"
+            <input id="aiChatInput" placeholder="Ask about your GRN data..."
                 style="flex:1; background:var(--off-white); border:1.5px solid rgba(76,175,80,0.2); border-radius:7px; padding:8px 12px; font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"
                 onkeydown="if(event.key==='Enter') askAI()">
             <button class="btn btn-primary" onclick="askAI()" id="askBtn">Ask →</button>
