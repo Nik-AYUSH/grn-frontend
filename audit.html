@@ -845,9 +845,9 @@ function renderPage() {
                         style="background:rgba(76,175,80,0.08);color:var(--green-dark);border-color:rgba(76,175,80,0.2);"
                         onclick="openEditPopup(${entry.id})">✏️ Edit</button>`
                     : ""}
-                ${role === "admin"
+                ${(role === "admin" || role === "store_manager")
                     ? `<button class="btn-delete" 
-                        onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc||"").replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
+                        onclick="openDeletePopup(${entry.id}, '${(entry.itemDesc||'').replace(/'/g,"\\'")}', '${entry.type}', ${entry.qty})">🗑 Delete</button>`
                     : ""}
                 ${(role !== "admin" && role !== "store_manager") ? "—" : ""}
             </td>
