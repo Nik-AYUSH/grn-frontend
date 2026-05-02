@@ -700,7 +700,7 @@ thead th {
             ⬇ Download GRN
         </button>
         <button class="btn-stock" onclick="openAIAnalytics()">
-            🤖 AI Insights
+             AI Insights
         </button>
         <div class="settings-wrapper">
             <button class="btn-settings" onclick="toggleSettings()" id="settingsBtn">⚙️</button>
@@ -758,7 +758,26 @@ thead th {
 
     <div class="btn-row">
         <button class="btn btn-secondary" onclick="closeAIPopup()">Close</button>
-        <button class="btn btn-primary" onclick="openAIAnalytics()">🔄 Refresh</button>
+        <button class="btn btn-primary" onclick="openAIAnalytics()"> Refresh</button>
+    </div>
+</div>
+
+<!-- GRN Download Month Picker Popup -->
+<div id="grnDownloadPopup" class="popup" style="width:380px; max-width:95vw;">
+    <h3 style="margin-bottom:18px;">⬇ Download GRN</h3>
+    <div style="margin-bottom:20px;">
+        <label class="form-label" style="display:block; margin-bottom:8px; font-size:11px; letter-spacing:1.5px; color:var(--text-light);">SELECT MONTH</label>
+        <input
+            type="month"
+            id="grnMonthPicker"
+            style="width:100%; padding:10px 14px; border:1.5px solid rgba(76,175,80,0.3); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; color:var(--text-dark); background:var(--off-white); outline:none; cursor:pointer;"
+            onfocus="this.style.borderColor='var(--green)'"
+            onblur="this.style.borderColor='rgba(76,175,80,0.3)'"
+        >
+    </div>
+    <div class="btn-row">
+        <button class="btn btn-secondary" onclick="closeGRNDownloadPopup()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmGRNDownload()">⬇ Download</button>
     </div>
 </div>
 
@@ -1035,9 +1054,24 @@ function calculate() {
 }
 
 function downloadExcel() {
+    // Pre-fill with the currently viewed calendar month
     const date = calendar.getDate();
     const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+    document.getElementById("grnMonthPicker").value = month;
+    showOverlay();
+    document.getElementById("grnDownloadPopup").style.display = "block";
+}
+
+function confirmGRNDownload() {
+    const month = document.getElementById("grnMonthPicker").value;
+    if (!month) { alert("Please select a month."); return; }
+    closeGRNDownloadPopup();
     window.location.href = `${API}/download?month=${month}`;
+}
+
+function closeGRNDownloadPopup() {
+    document.getElementById("grnDownloadPopup").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
 }
 
 async function downloadStock() {
