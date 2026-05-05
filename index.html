@@ -913,7 +913,31 @@ let selectedEvent = null;
 let currentGRNId = null;
 let calendar = null;
 
-document.addEventListener('DOMContentLoaded', async function () {
+// After — validates token with server before redirecting
+document.addEventListener("DOMContentLoaded", async () => {
+    const existingToken = localStorage.getItem("token");
+    const existingRole  = localStorage.getItem("role");
+
+    if (existingToken && existingRole) {
+        try {
+            // ✅ Check if token is still valid on server
+            const res = await fetch(`${API}/me`, {
+                headers: { "Authorization": `Bearer ${existingToken}` }
+            });
+
+            if (res.ok) {
+                // ✅ Token still valid — redirect to app
+                redirectByRole(existingRole);
+            } else {
+                // ✅ Token expired — clear and stay on login page
+                localStorage.clear();
+            }
+        } catch (err) {
+            // ✅ Network error — stay on login page
+            console.error("Token check failed:", err);
+        }
+    }
+});
     const authed = await checkAuth();
     if (!authed) return;
     const username = localStorage.getItem("username");
@@ -995,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         },
     });
     calendar.render();
-});
+
 
 // ✅ Stock items cache for autocomplete
 let stockItemsCache = [];
