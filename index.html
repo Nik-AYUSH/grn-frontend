@@ -913,36 +913,10 @@ let selectedEvent = null;
 let currentGRNId = null;
 let calendar = null;
 
-// After — validates token with server before redirecting
-// Add async keyword
 document.addEventListener('DOMContentLoaded', async function () {
     const authed = await checkAuth();
     if (!authed) return;
-    const existingToken = localStorage.getItem("token");
-    const existingRole  = localStorage.getItem("role");
 
-    if (existingToken && existingRole) {
-        try {
-            // ✅ Check if token is still valid on server
-            const res = await fetch(`${API}/me`, {
-                headers: { "Authorization": `Bearer ${existingToken}` }
-            });
-
-            if (res.ok) {
-                // ✅ Token still valid — redirect to app
-                redirectByRole(existingRole);
-            } else {
-                // ✅ Token expired — clear and stay on login page
-                localStorage.clear();
-            }
-        } catch (err) {
-            // ✅ Network error — stay on login page
-            console.error("Token check failed:", err);
-        }
-    }
-});
-    const authed = await checkAuth();
-    if (!authed) return;
     const username = localStorage.getItem("username");
     const role     = localStorage.getItem("role");
     document.getElementById("dropdownUsername").textContent = username || "User";
@@ -953,54 +927,46 @@ document.addEventListener('DOMContentLoaded', async function () {
         initialView: 'dayGridMonth',
         eventOrder:  "order,start",
         events: async function (fetchInfo, successCallback, failureCallback) {
-    try {
-        // ✅ Get the month range visible in the calendar
-        const start = fetchInfo.startStr.substring(0, 7); // YYYY-MM
-        const end   = fetchInfo.endStr.substring(0, 7);   // YYYY-MM
+            try {
+                const [grnRes, auditRes] = await Promise.all([
+                    authFetch(`${API}/entries`),
+                    authFetch(`${API}/auditLog`)
+                ]);
+                if (!grnRes || !auditRes) return;
 
-        // ✅ Fetch GRN entries and audit log in parallel
-        // Use audit log for issues since it has all months
-        const [grnRes, auditRes] = await Promise.all([
-            authFetch(`${API}/entries`),
-            authFetch(`${API}/auditLog`)
-        ]);
-        if (!grnRes || !auditRes) return;
+                const grnData   = await grnRes.json();
+                const auditData = await auditRes.json();
 
-        const grnData   = await grnRes.json();
-        const auditData = await auditRes.json();
+                const grnEvents = grnData.map(e => ({
+                    id:              String(e.id),
+                    title:           [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
+                    date:            e.date,
+                    backgroundColor: "#388E3C",
+                    borderColor:     "#2E7D32",
+                    textColor:       "#ffffff",
+                    order:           1
+                }));
 
-        // ✅ GRN events — green
-        const grnEvents = grnData.map(e => ({
-            id:              String(e.id),
-            title:           [e.col1, e.col2, e.col3, e.col4, e.col5, e.col6].join(" | "),
-            date:            e.date,
-            backgroundColor: "#388E3C",
-            borderColor:     "#2E7D32",
-            textColor:       "#ffffff",
-            order:           1
-        }));
+                const issueEvents = auditData
+                    .filter(a => a.type === "Issue" && a.timestamp)
+                    .map(a => ({
+                        id:              `issue-${a.id}`,
+                        title:           `📤 ${a.itemDesc} (−${a.qty})`,
+                        date:            a.timestamp.split("T")[0],
+                        backgroundColor: "#ef4444",
+                        borderColor:     "#dc2626",
+                        textColor:       "#ffffff",
+                        order:           99,
+                        extendedProps:   { isIssue: true }
+                    }));
 
-        // ✅ Issue events from audit log — red
-        const issueEvents = auditData
-            .filter(a => a.type === "Issue" && a.timestamp)
-            .map(a => ({
-                id:              `issue-${a.id}`,
-                title:           `📤 ${a.itemDesc} (−${a.qty})`,
-                date:            a.timestamp.split("T")[0],
-                backgroundColor: "#ef4444",
-                borderColor:     "#dc2626",
-                textColor:       "#ffffff",
-                order:           99,
-                extendedProps:   { isIssue: true }
-            }));
+                successCallback([...grnEvents, ...issueEvents]);
 
-        successCallback([...grnEvents, ...issueEvents]);
-
-    } catch (err) {
-        console.error("Fetch error:", err);
-        failureCallback(err);
-    }
-},
+            } catch (err) {
+                console.error("Fetch error:", err);
+                failureCallback(err);
+            }
+        },
         dateClick: function (info) {
             selectedDate = info.dateStr;
             selectedEvent = null;
@@ -1010,9 +976,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             document.getElementById("formPopup").style.display = "block";
         },
         eventClick: function (info) {
-            // ✅ Don't open GRN popup for issue events
             if (info.event.extendedProps.isIssue) return;
-
             selectedEvent = info.event;
             selectedDate  = info.event.startStr;
             let values    = (info.event.title || "").split(" | ");
@@ -1022,7 +986,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         },
     });
     calendar.render();
-
+});
 
 // ✅ Stock items cache for autocomplete
 let stockItemsCache = [];
