@@ -886,15 +886,36 @@ async function authFetch(url, options = {}) {
 }
 
 // ✅ Immediate auth check
-const _token = localStorage.getItem("token");
-if (!_token) window.location.href = "login.html";
+async function checkAuth() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "login.html"; return false; }
+    try {
+        const res = await fetch(`${API}/me`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.status === 401 || res.status === 403) {
+            localStorage.clear();
+            window.location.href = "login.html";
+            return false;
+        }
+        const user = await res.json();
+        localStorage.setItem("username", user.username);
+        localStorage.setItem("role", user.role);
+        return true;
+    } catch (err) {
+        console.error("Auth check failed:", err);
+        return true;
+    }
+}
 
 let selectedDate = null;
 let selectedEvent = null;
 let currentGRNId = null;
 let calendar = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    const authed = await checkAuth();
+    if (!authed) return;
     const username = localStorage.getItem("username");
     const role     = localStorage.getItem("role");
     document.getElementById("dropdownUsername").textContent = username || "User";
@@ -913,9 +934,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // ✅ Fetch GRN entries and audit log in parallel
         // Use audit log for issues since it has all months
         const [grnRes, auditRes] = await Promise.all([
-            fetch(`${API}/entries`),
+            authFetch(`${API}/entries`),
             authFetch(`${API}/auditLog`)
         ]);
+        if (!grnRes || !auditRes) return;
 
         const grnData   = await grnRes.json();
         const auditData = await auditRes.json();
@@ -1678,7 +1700,7 @@ if (!res) return;
                 const config = JSON.parse(chartMatch[1]);
 
                 // Extract plain text before/after the chart block
-                const plainText = answer.replace(/```chart\n[\s\S]*?\n```/, "").trim();
+                const plainText = answer.replace(/```(?:chart|json)?\n?[\s\S]*?```/, "").trim(); 
                 if (plainText) {
                     aiBubble.textContent = plainText;
                     chatHistory.appendChild(aiBubble);
