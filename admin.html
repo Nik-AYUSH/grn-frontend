@@ -599,21 +599,44 @@
 
 <script>
 const API      = "https://grn-backend-production.up.railway.app";
-if (!localStorage.getItem("token")) window.location.href = "login.html";
-if (localStorage.getItem("role") !== "admin") window.location.href = "index.html";
-
 const myUserId = Number(localStorage.getItem("userId"));
-
-
 
 let allUsers        = [];
 let pendingDeleteId = null;
 
-function checkAuth() {
-    const username = localStorage.getItem("username");
-    const role     = localStorage.getItem("role"); // ✅ read fresh here
-    document.getElementById("dropdownUsername").textContent = username || "User";
-    document.getElementById("dropdownRole").textContent     = role ? role.replace("_", " ") : "";
+// ✅ Real auth check — validates token with server
+async function checkAuth() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "login.html"; return false; }
+
+    try {
+        const res = await fetch(`${API}/me`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            localStorage.clear();
+            window.location.href = "login.html";
+            return false;
+        }
+        const user = await res.json();
+
+        // ✅ Check role from server, not localStorage
+        if (user.role !== "admin") {
+            window.location.href = "index.html";
+            return false;
+        }
+
+        // ✅ Update display
+        localStorage.setItem("username", user.username);
+        localStorage.setItem("role", user.role);
+        document.getElementById("dropdownUsername").textContent = user.username;
+        document.getElementById("dropdownRole").textContent = user.role.replace(/_/g, " ");
+        return true;
+
+    } catch (err) {
+        console.error("Auth check failed:", err);
+        return false;
+    }
 }
 
 function toggleSettings() {
@@ -644,14 +667,31 @@ async function loadUsers() {
     document.getElementById("usersBody").innerHTML =
         `<tr><td colspan="5" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
     try {
-        const res  = await fetch(`${API}/users`, { headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } });
+        const res = await fetch(`${API}/users`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+
+        // ✅ Handle auth errors
+        if (res.status === 401 || res.status === 403) {
+            localStorage.clear();
+            window.location.href = "login.html";
+            return;
+        }
+
+        if (!res.ok) {
+            document.getElementById("usersBody").innerHTML =
+                `<tr><td colspan="5" class="empty-state"><div>⚠️</div><p>Failed to load users.</p></td></tr>`;
+            return;
+        }
+
         const data = await res.json();
         allUsers   = Array.isArray(data) ? data : [];
         updateStats(allUsers);
         renderUsers(allUsers);
+
     } catch (err) {
         document.getElementById("usersBody").innerHTML =
-            `<tr><td colspan="5" class="empty-state"><div>⚠️</div><p>Failed to load users.</p></td></tr>`;
+            `<tr><td colspan="5" class="empty-state"><div>⚠️</div><p>Could not connect to server.</p></td></tr>`;
     }
 }
 
@@ -860,7 +900,12 @@ function showToast(type, title, message) {
     setTimeout(() => { toast.style.display = "none"; }, 5000);
 }
 
-document.addEventListener("DOMContentLoaded", () => { checkAuth(); loadUsers(); });
+// ✅ Validate auth first, then load users
+document.addEventListener("DOMContentLoaded", async () => {
+    const authed = await checkAuth();
+    if (!authed) return;
+    loadUsers();
+});
 </script>
 </body>
 </html>
