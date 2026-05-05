@@ -914,7 +914,10 @@ let currentGRNId = null;
 let calendar = null;
 
 // After — validates token with server before redirecting
-document.addEventListener("DOMContentLoaded", async () => {
+// Add async keyword
+document.addEventListener('DOMContentLoaded', async function () {
+    const authed = await checkAuth();
+    if (!authed) return;
     const existingToken = localStorage.getItem("token");
     const existingRole  = localStorage.getItem("role");
 
