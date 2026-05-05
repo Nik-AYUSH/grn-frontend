@@ -863,6 +863,28 @@ thead th {
 <script>
 const API = "https://grn-backend-production.up.railway.app";
 
+// ✅ Global authenticated fetch — auto logout on token expiry
+async function authFetch(url, options = {}) {
+    const token = localStorage.getItem("token");
+    
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    // ✅ Token expired or invalid — force logout
+    if (response.status === 401 || response.status === 403) {
+        localStorage.clear();
+        window.location.href = "login.html";
+        return null;
+    }
+
+    return response;
+}
+
 // ✅ Immediate auth check
 const _token = localStorage.getItem("token");
 if (!_token) window.location.href = "login.html";
@@ -892,9 +914,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Use audit log for issues since it has all months
         const [grnRes, auditRes] = await Promise.all([
             fetch(`${API}/entries`),
-            fetch(`${API}/auditLog`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-            })
+            authFetch(`${API}/auditLog`)
         ]);
 
         const grnData   = await grnRes.json();
@@ -961,9 +981,8 @@ let stockItemsCache = [];
 // ✅ Load stock items once for autocomplete
 async function loadStockItemsForAutocomplete() {
     try {
-        const res  = await fetch(`${API}/stockItems`, {
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-        });
+        const res = await authFetch(`${API}/stockItems`);
+        if (!res) return;
         const data = await res.json();
         stockItemsCache = (data.items || []).map(i => i.desc);
     } catch (err) {
@@ -1029,7 +1048,7 @@ document.addEventListener("click", (e) => {
 async function logout() {
     const token = localStorage.getItem("token");
     try {
-        await fetch(`${API}/logout`, { method: "POST", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } });
+        await authFetch(`${API}/logout`, { method: "POST" });
     } catch(e) {}
     localStorage.clear();
     window.location.href = "login.html";
@@ -1079,9 +1098,8 @@ async function downloadStock() {
     const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
 
     try {
-        const res = await fetch(`${API}/downloadStock?month=${month}`, {
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-        });
+        const res = await authFetch(`${API}/downloadStock?month=${month}`);
+        if (!res) return;
         if (!res.ok) throw new Error("Download failed");
 
         const blob = await res.blob();
@@ -1188,11 +1206,9 @@ function saveData() {
     };
 
     if (!selectedEvent) {
-        fetch(`${API}/addEntry`, {
+        authFetch(`${API}/addEntry`, {
             method: "POST",
-            headers: { "Content-Type": "application/json",
-                       "Authorization": `Bearer ${localStorage.getItem("token")}`
-             },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
         .then(res => { if (!res.ok) throw new Error("Add failed: " + res.status); return res.json(); })
@@ -1205,11 +1221,9 @@ function saveData() {
         })
         .catch(err => { console.error("Add Error:", err); alert("Failed to save GRN."); });
     } else {
-        fetch(`${API}/updateEntry`, {
+        authFetch(`${API}/updateEntry`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json",
-                       "Authorization": `Bearer ${localStorage.getItem("token")}`
-             },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: Number(selectedEvent.id), updated: payload })
         })
         .then(res => { if (!res.ok) throw new Error("Update failed: " + res.status); return res.json(); })
@@ -1227,11 +1241,9 @@ function saveData() {
 function deleteData() {
     if (!selectedEvent) { alert("Please click on an existing entry first."); return; }
     if (!confirm("⚠️ This will permanently delete the GRN entry and all its items.\n\nContinue?")) return;
-    fetch(`${API}/deleteEntry/${selectedEvent.id}`, { method: "DELETE",
-                                                      headers: {
-                                                          "Authorization": `Bearer ${localStorage.getItem("token")}` 
-                                                      }
-     })
+    authFetch(`${API}/deleteEntry/${selectedEvent.id}`, {
+    method: "DELETE"
+})
     .then(res => { if (!res.ok) throw new Error("Delete failed: " + res.status); return res.json(); })
     .then(() => { closePopup(); calendar.refetchEvents(); alert("GRN Deleted!"); })
     .catch(err => { console.error("Delete Error:", err); alert("Delete failed."); });
@@ -1323,9 +1335,8 @@ async function downloadIssues() {
     const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
 
     try {
-        const res  = await fetch(`${API}/stockItems?month=${month}`, {
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-        });
+        const res = await authFetch(`${API}/stockItems?month=${month}`);
+        if (!res) return;
         const data = await res.json();
         const items = data.items || [];
 
@@ -1410,13 +1421,10 @@ async function openAIAnalytics() {
         // ✅ Fetch all three data sources in parallel
         const [grnRes, stockRes, auditRes] = await Promise.all([
             fetch(`${API}/entries`),
-            fetch(`${API}/stockItems?month=${month}`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-            }),
-            fetch(`${API}/auditLog`, {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-            })
+            authFetch(`${API}/stockItems?month=${month}`),
+            authFetch(`${API}/auditLog`)
         ]);
+if (!stockRes || !auditRes) return;
 
         const grnData   = await grnRes.json();
         const stockData = await stockRes.json();
@@ -1574,14 +1582,12 @@ function buildCombinedSummary(grnData, stockItems, auditData, month) {
 }
 
 async function getAIInsights(summary, month) {
-    const res  = await fetch(`${API}/aiInsights`, {
-        method:  "POST",
-        headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({ summary, month, isChat: false })
-    });
+    const res = await authFetch(`${API}/aiInsights`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ summary, month, isChat: false })
+});
+if (!res) return;
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to get insights");
     return data;
@@ -1639,18 +1645,16 @@ async function askAI() {
     aiChatHistory.push({ role: "user", content: question });
 
     try {
-        const res  = await fetch(`${API}/aiInsights`, {
-            method:  "POST",
-            headers: {
-                "Content-Type":  "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
+        const res = await authFetch(`${API}/aiInsights`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                summary:  aiDataSummary,
+                summary: aiDataSummary,
                 messages: aiChatHistory,
-                isChat:   true
-            })
-        });
+                isChat: true
+    })
+});
+if (!res) return;
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
