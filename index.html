@@ -690,7 +690,7 @@ thead th {
         <button class="btn-stock" onclick="window.location.href='stock.html'">
             📊 Stock Register
         </button>
-        <button class="btn-stock" onclick="downloadStock()">
+        <button class="btn-stock" onclick="openStockDownloadPopup()">
             📦 Download Stock
         </button>
         <button class="btn-stock" onclick="downloadIssues()">
@@ -778,6 +778,29 @@ thead th {
     <div class="btn-row">
         <button class="btn btn-secondary" onclick="closeGRNDownloadPopup()">Cancel</button>
         <button class="btn btn-primary" onclick="confirmGRNDownload()">⬇ Download</button>
+    </div>
+</div>
+
+<div id="stockDownloadPopup" class="popup" style="width:380px;">
+    <h3>Download Stock Register</h3>
+    <div style="margin-bottom:20px;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-light); 
+                       letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px;">
+            Select Month
+        </label>
+        <input type="month" id="stockDownloadMonth"
+            style="width:100%; background:var(--off-white); border:1.5px solid rgba(76,175,80,0.2);
+                   border-radius:7px; color:var(--text-dark); font-family:'DM Sans',sans-serif;
+                   font-size:13px; padding:10px 12px; outline:none; transition:all 0.2s ease;"
+            onfocus="this.style.borderColor='var(--green)'"
+            onblur="this.style.borderColor='rgba(76,175,80,0.2)'">
+        <div style="font-size:11px; color:var(--text-light); margin-top:6px;">
+            Leave empty to download current month
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn btn-secondary" onclick="closeStockDownloadPopup()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmStockDownload()">📦 Download →</button>
     </div>
 </div>
 
@@ -1031,6 +1054,59 @@ function handleDescInput(value) {
     }).join("");
 
     list.style.display = "block";
+}
+
+function openStockDownloadPopup() {
+    // ✅ Default to current calendar month
+    const date  = calendar.getDate();
+    const month = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+    document.getElementById("stockDownloadMonth").value = month;
+    document.getElementById("stockDownloadPopup").style.display = "block";
+    showOverlay();
+}
+
+function closeStockDownloadPopup() {
+    document.getElementById("stockDownloadPopup").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
+}
+
+async function confirmStockDownload() {
+    const monthInput = document.getElementById("stockDownloadMonth").value;
+    const date       = calendar.getDate();
+    const month      = monthInput ||
+        date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+
+    const btn = document.querySelector("#stockDownloadPopup .btn-primary");
+    btn.disabled    = true;
+    btn.textContent = "Downloading...";
+
+    try {
+        const res = await authFetch(`${API}/downloadStock?month=${month}`);
+        if (!res) return;
+
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || "Download failed");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href     = url;
+        a.download = `Stock_Register_${month}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        closeStockDownloadPopup();
+
+    } catch (err) {
+        console.error("Download stock error:", err);
+        alert("Failed to download stock register.");
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = "📦 Download →";
+    }
 }
 
 function selectDescSuggestion(desc) {
@@ -1335,6 +1411,7 @@ function clearItemForm() {
 
 function closePopup() {
     document.getElementById("formPopup").style.display = "none";
+    document.getElementById("stockDownloadPopup").style.display = "none";
     document.getElementById("overlay").style.display = "none";
 }
 
